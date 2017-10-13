@@ -1,4 +1,5 @@
-#include "mpi.h"
+/** PRETTY SURE THIS IS THE WINNER, JUST ADJUST FOR MATRIX INSTEAD OF VECTOR**/
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
