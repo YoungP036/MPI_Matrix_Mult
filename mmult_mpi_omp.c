@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
 		}
 
 		b = (double *)malloc(sizeof(double)*nrows);
-
 		b = get_matrix(nrows, argv[2]);
 		printf("Got 1st matrix\n");
 
@@ -64,6 +63,7 @@ int main(int argc, char *argv[])
 
 		if (myid == 0)
 		{
+			printf("Master starting\n");
 			// Master Code goes here
 			aa = malloc(sizeof(double) * nrows * ncols);
 			bb = malloc(sizeof(double) * nrows);
@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 			for (i = 1; i < nrows + 1; i++)
 			{
 				double *row = get_row(nrows, i, argv[1]);
+				printf("row obtained\n");
 				double *test = row;
 
 				int t;
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
 				printf("%lf\n", *cc1);
 				cc1++;
 			}
+			printf("master ending\n");
 		}
 		else
 		{
@@ -160,6 +162,7 @@ int main(int argc, char *argv[])
 //count number of newlines between file.start and file.end
 int get_nrows(char *input)
 {
+	printf("in get nrows\n");
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
@@ -174,12 +177,14 @@ int get_nrows(char *input)
 		if (c == '\n')
 			row_count++;
 	fclose(fp);
+	printf("leaving get nrows\n");
 	return row_count;
 }
 
 //count number of values between line.start and line.end
 int get_ncols(char *input)
 {
+	printf("in get_ncols\n");
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
@@ -192,12 +197,14 @@ int get_ncols(char *input)
 		if (c == ' ')		
 			col_count++;		
 	fclose(fp);
+	printf("leaving get_ncols\n");
 	return col_count;
 }
 
 
 double* get_matrix(int nrows, char *input)
 {
+	printf("in get_matrix\n");
 	//guard against file and malloc failures
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
@@ -222,11 +229,13 @@ double* get_matrix(int nrows, char *input)
 	}	
 
 	fclose(fp);
+	printf("leaving get matrix\n");
 	return ret_mat;
 }
 
 double* get_row(int ncols, int row, char *input)
 {
+	printf("in getting row\n");
 	//guard against file and malloc failures
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
@@ -257,5 +266,6 @@ double* get_row(int ncols, int row, char *input)
 		working_row++;
 	}
 	fclose(fp);
+	printf("leaving get row\n");
 	return ret_row;
 }
