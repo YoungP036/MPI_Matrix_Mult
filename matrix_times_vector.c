@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 					int curr_row=get_row_from_index(nrows,ncols,numsent);
 					int curr_col=get_col_from_index(nrows,ncols,numsent);
 					printf("curr_row=%d\n",curr_row);
-					printf1("curr_col=%d\n",curr_col);
+					printf("curr_col=%d\n",curr_col);
 					for(j=(curr_row*ncols);j<ncols;j++){
 						r[j]=a[j];
 						printf("row[%d]=%f\n",j,r[j]);
