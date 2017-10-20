@@ -96,13 +96,14 @@ int main(int argc, char* argv[])
 	} 
 	else
 		fprintf(stderr, "Usage matrix_times_vector <size>\n");	
+		//compare using traditional mmult
+	// double *ans2;
+	// ans2  = malloc(sizeof(double) * nrows * nrows);	
+	// mmult(ans2, aa, nrows, ncols, b, ncols, nrows);
+	// compare_matrices(ans, ans2, nrows, nrows);
+		
 	MPI_Finalize();
 	
-	//compare using traditional mmult
-	double *ans2;
-	ans2  = malloc(sizeof(double) * nrows * nrows);	
-	mmult(ans2, aa, nrows, ncols, b, ncols, nrows);
-	compare_matrices(ans, ans2, nrows, nrows);
-	
+
 	return 0;
 }
