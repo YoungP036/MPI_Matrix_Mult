@@ -17,39 +17,41 @@ void compare_matrix(double *a, double *b, int nRows, int nCols);
 
 int main(int argc, char* argv[])
 {
-  int nrows, ncols;
-  double *aa;	/* the A matrix */
-  double *bb;	/* the B matrix */
-  double *cc1;	/* A x B computed using the omp-mpi code you write */
-  double *cc2;	/* A x B computed using the conventional algorithm */
-  int myid, numprocs;
-  double starttime, endtime;
-  MPI_Status status;
-  /* insert other global variables here */
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  if (argc > 1) {
-    nrows = atoi(argv[1]);
-    ncols = nrows;
-    if (myid == 0) {
-      // Master Code goes here
-      aa = gen_matrix(nrows, ncols);
-      bb = gen_matrix(ncols, nrows);
-      cc1 = malloc(sizeof(double) * nrows * nrows); 
-      starttime = MPI_Wtime();
-      /* Insert your master code here to store the product into cc1 */
-      endtime = MPI_Wtime();
-      printf("%f\n",(endtime - starttime));
-      cc2  = malloc(sizeof(double) * nrows * nrows);
-      mmult(cc2, aa, nrows, ncols, bb, ncols, nrows);
-      compare_matrices(cc2, cc1, nrows, nrows);
-    } else {
+	int nrows, ncols;
+  	double *a;	/* the A matrix */
+  	double *b;	/* the B matrix */
+	double *c1;	/* A x B computed using the omp-mpi code you write */
+	double *c2;	/* A x B computed using the conventional algorithm */
+	int myid, numprocs;
+	double starttime, endtime;
+	MPI_Status status;
+	/* insert other global variables here */
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	if (argc > 1) {
+		nrows = atoi(argv[1]);
+		ncols = nrows;
+		if (myid == 0) {
+		// Master Code goes here
+		a = gen_matrix(nrows, ncols);
+		b = gen_matrix(ncols, nrows);
+		c1 = malloc(sizeof(double) * nrows * nrows); 
+		starttime = MPI_Wtime();
+		/* Insert your master code here to store the product into c1 */
+		endtime = MPI_Wtime();
+		printf("%f\n",(endtime - starttime));
+		c2  = malloc(sizeof(double) * nrows * nrows);
+		mmult(c2, a, nrows, ncols, b, ncols, nrows);
+		compare_matrices(c2, c1, nrows, nrows);
+		}//end inner if
+		else {
       // Slave Code goes here
-    }
-  } else {
+    	}//end inner else
+	}//end outer if 
+	else {
     fprintf(stderr, "Usage matrix_times_vector <size>\n");
-  }
-  MPI_Finalize();
-  return 0;
+  	}//end outer else
+	MPI_Finalize();
+	return 0;
 }
