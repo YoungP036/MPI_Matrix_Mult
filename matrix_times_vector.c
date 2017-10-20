@@ -43,7 +43,8 @@ int main(int argc, char* argv[])
 			printf(" %f",a[i*ncols+j]);
 		}
 		printf("\n");
-    }
+	}
+	printf("**B**\n");
       for(i=0;i<ncols;i++){
         for(j=0; j<nrows; j++){
 		  b[i*nrows+j]=(double)rand()/RAND_MAX;
@@ -56,18 +57,19 @@ int main(int argc, char* argv[])
       numsent = 0;
       
       //(buffer,bufferentrycount,datatype,rank of broadcast root, communicator/handler)
-      MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
+	  MPI_Bcast(b, ncols*nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
+	  MPI_Bcast(a, ncols*nrows,MPI_DOUBLE,master,MPI_COMM_WORLD);
       //for each process
-      for (i = 0; i < min(numprocs-1, nrows); i++) {
+    //   for (i = 0; i < min(numprocs-1, nrows); i++) {
         //get a row per process
-	      for (j = 0; j < ncols; j++) {
-	    	buffer[j] = a[i * ncols + j];
-        }
+	    //   for (j = 0; j < ncols; j++) {
+	    	// buffer[j] = a[i * ncols + j];
+        // }
         //send row
-	      MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
-        numsent++;
-      }//end for
-      printf("numsent=%d\n",numsent);
+	    //   MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
+        // numsent++;
+    //   }//end for
+    //   printf("numsent=%d\n",numsent);
       for (i = 0; i < nrows; i++) {
 	      MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
 		    MPI_COMM_WORLD, &status);
@@ -88,9 +90,12 @@ int main(int argc, char* argv[])
     }
     //slave code here
     else {
-      MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
+      MPI_Bcast(b, ncols*nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
+      MPI_Bcast(a, ncols*nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
       for(i=0;i<sizeof(b);i++)
         printf("from %d, %f\n",myid,b[i]);
+      for(i=0;i<sizeof(a);i++)
+        printf("from %d, %f\n",myid,a[i]);
       if (myid <= nrows) {
 	      while(1) {
 	        MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG, 
