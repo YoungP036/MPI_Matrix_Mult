@@ -1,21 +1,10 @@
-/** PRETTY SURE THIS IS THE WINNER, JUST ADJUST FOR MATRIX INSTEAD OF VECTOR**/
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/times.h>
-#define min(x, y) ((x)<(y)?(x):(y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
-/** 
-    Program to multiply a matrix times a vector using both
-    mpi to distribute the computation among nodes and omp
-    to distribute the computation among threads.
-*/
-double* gen_matrix(int n, int m);
-int mmult(double *c, double *a, int aRows, int aCols, double *b, int bRows, int bCols);
-void compare_matrix(double *a, double *b, int nRows, int nCols);
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	int nrows, ncols;
 	double *aa, *b, *c;
@@ -33,78 +22,94 @@ int main(int argc, char* argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-	if (argc > 1) {
+	if (argc > 1)
+	{
 		nrows = atoi(argv[1]);
 		ncols = nrows;
-		aa = (double*)malloc(sizeof(double) * nrows * ncols);
-		b = (double*)malloc(sizeof(double) * ncols);
-		c = (double*)malloc(sizeof(double) * nrows);
-		buffer = (double*)malloc(sizeof(double) * ncols);
+		aa = (double *)malloc(sizeof(double) * nrows * ncols);
+		b = (double *)malloc(sizeof(double) * ncols);
+		c = (double *)malloc(sizeof(double) * nrows);
+		buffer = (double *)malloc(sizeof(double) * ncols);
 		master = 0;
-		if (myid == master) {
+		if (myid == master)
+		{
 			// Master Code goes here
-			for (i = 0; i < nrows; i++) 
-				for (j = 0; j < ncols; j++) 
-					aa[i*ncols + j] = (double)rand()/RAND_MAX;
-				
+			for (i = 0; i < nrows; i++)
+			{
+				for (j = 0; j < ncols; j++)
+				{
+					aa[i * ncols + j] = (double)rand() / RAND_MAX;
+				}
+			}
+
 			starttime = MPI_Wtime();
 			numsent = 0;
 			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
-			for (i = 0; i < min(numprocs-1, nrows); i++) {
-				for (j = 0; j < ncols; j++) 
-					buffer[j] = aa[i * ncols + j];			  
-				MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
+			for (i = 0; i < min(numprocs - 1, nrows); i++)
+			{
+				for (j = 0; j < ncols; j++)
+				{
+					buffer[j] = aa[i * ncols + j];
+				}
+				MPI_Send(buffer, ncols, MPI_DOUBLE, i + 1, i + 1, MPI_COMM_WORLD);
 				numsent++;
 			}
-			
-			for (i = 0; i < nrows; i++) {
-				MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, &status);
+			for (i = 0; i < nrows; i++)
+			{
+				MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,
+						 MPI_COMM_WORLD, &status);
 				sender = status.MPI_SOURCE;
 				anstype = status.MPI_TAG;
-				c[anstype-1] = ans;
-				if (numsent < nrows) {
-					for (j = 0; j < ncols; j++) 
-						buffer[j] = aa[numsent*ncols + j];
-					
-					MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent+1,MPI_COMM_WORLD);
+				c[anstype - 1] = ans;
+				if (numsent < nrows)
+				{
+					for (j = 0; j < ncols; j++)
+					{
+						buffer[j] = aa[numsent * ncols + j];
+					}
+					MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent + 1,
+							 MPI_COMM_WORLD);
 					numsent++;
-				} 
-				else 
+				}
+				else
+				{
 					MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
-			} 
+				}
+			}
 			endtime = MPI_Wtime();
-			//compare using traditional mmult
-			double *ans2;
-			ans2  = malloc(sizeof(double) * nrows * nrows);	
-			mmult(ans2, aa, nrows, ncols, b, ncols, nrows);
-			compare_matrices(ans, ans2, nrows, nrows);
-			printf("%f\n",(endtime - starttime));
-		}//end master
-		else {
+			printf("%f\n", (endtime - starttime));
+		}
+		else
+		{
 			// Slave Code goes here
 			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
-			if (myid <= nrows) {
-				while(1) {
-					MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG,MPI_COMM_WORLD, &status);
+			if (myid <= nrows)
+			{
+				while (1)
+				{
+					MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG,
+							 MPI_COMM_WORLD, &status);
 					if (status.MPI_TAG == 0)
-						break;					
+					{
+						break;
+					}
 					row = status.MPI_TAG;
 					ans = 0.0;
-					#pragma omp parallel
-					#pragma omp shared(ans) for reduction(+:ans)
-						for (j = 0; j < ncols; j++) 
-							ans += buffer[j] * b[j];						
-						MPI_Send(&ans, 1, MPI_DOUBLE, master, row, MPI_COMM_WORLD);
+#pragma omp parallel
+#pragma omp shared(ans) for reduction(+ : ans)
+					for (j = 0; j < ncols; j++)
+					{
+						ans += buffer[j] * b[j];
+					}
+					MPI_Send(&ans, 1, MPI_DOUBLE, master, row, MPI_COMM_WORLD);
 				}
 			}
 		}
-	} 
+	}
 	else
-		fprintf(stderr, "Usage matrix_times_vector <size>\n");	
-
-		
+	{
+		fprintf(stderr, "Usage matrix_times_vector <size>\n");
+	}
 	MPI_Finalize();
-	
-
 	return 0;
 }

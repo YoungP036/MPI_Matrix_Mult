@@ -3,31 +3,34 @@
 #include <sys/times.h>
 #include <stdlib.h>
 
-int mmult(double *c, 
-	  double *a, int aRows, int aCols, 
-	  double *b, int bRows, int bCols);
+int mmult(double *c,
+		  double *a, int aRows, int aCols,
+		  double *b, int bRows, int bCols);
 
 int mmult_omp(double *c,
-		   double *a, int aRows, int aCols,
-		   double *b, int bRows, int bCols);
+			  double *a, int aRows, int aCols,
+			  double *b, int bRows, int bCols);
 
-double* gen_matrix(int n, int m);
+double *gen_matrix(int n, int m);
 
-void compare_matrices(double* a, double* b, int nRows, int nCols);
+void compare_matrices(double *a, double *b, int nRows, int nCols);
 
-double deltaTime(struct timespec* start, struct timespec* end) {
-  double delta = (end->tv_sec - start->tv_sec) + (end->tv_nsec - start->tv_nsec)/1e9;
-  return delta;
+double deltaTime(struct timespec *start, struct timespec *end)
+{
+	double delta = (end->tv_sec - start->tv_sec) + (end->tv_nsec - start->tv_nsec) / 1e9;
+	return delta;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
 	struct timespec start;
 	struct timespec end;
 	struct timespec res;
 	double *a, *b, *c1, *c2;
 	int n;
 	double times[2];
-	if (argc > 1) {
+	if (argc > 1)
+	{
 		n = atoi(argv[1]);
 		a = gen_matrix(n, n);
 		b = gen_matrix(n, n);
@@ -45,9 +48,9 @@ int main(int argc, char* argv[]) {
 		printf(" %f", times[1]);
 		printf("\n");
 		compare_matrices(c1, c2, n, n);
-	} 
-	else 
+	}
+	else
+	{
 		fprintf(stderr, "Usage %s <n>\n", argv[0]);
-
+	}
 }
-
