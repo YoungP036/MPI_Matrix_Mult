@@ -5,14 +5,13 @@
 #include <sys/times.h>
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
-double *gen_matrix(int n, int m);
+double *gen_mmatrix(int nrows, char *input);
 int mmult(double *c, double *a, int aRows, int aCols, double *b, int bRows, int bCols);
 void compare_matrix(double *a, double *b, int nRows, int nCols);
-
-int get_nrows(char *);
-int get_ncols(char *);
-double *gen_matrix(int, char *);
-double *get_row(int, int, char *);
+double *get_col(int nrows, int ncols, int col, char *input);
+int get_nrows(char *input);
+int get_ncols(char *input);
+double *get_row(int, int, char *input);
 
 /**
     Program to multiply a matrix times a matrix using both
@@ -33,6 +32,7 @@ int main(int argc, char *argv[])
 	int nrows, ncols;
 	double *b, *c;
 	double *times;
+	
 	double total_times;
 	int run_index;
 	int nruns;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 		}
 
 		b = (double *)malloc(sizeof(double) * nrows);
-		b = gen_matrix(nrows, argv[2]);
+		b = gen_mmatrix(nrows, argv[2]);
 
 		double *ans = malloc(sizeof(double) * 1);
 
@@ -76,16 +76,18 @@ int main(int argc, char *argv[])
 			int i;
 			for (i = 1; i < nrows + 1; i++)
 			{
+				//get current row
 				double *row = get_row(nrows, i, argv[1]);
-				double *test = row;
+				// double *test = row;
 
-				int t;
-				for (t = 0; t < nrows; t++)
-				{
-					//printf("%lf\n", *test);
-					test++;
-				}
+				// int t;
+				// for (t = 0; t < nrows; t++)
+				// {
+				// 	//printf("%lf\n", *test);
+				// 	test++;
+				// }
 
+				//how we communicate current row
 				status.MPI_TAG = i;
 
 				int rank = i % 3;
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
+			//note ncols=nrows in mat 2
 			// Slave Code goes here
 			MPI_Bcast(b, nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 			double *buf = malloc(sizeof(double) * nrows);
@@ -157,7 +160,6 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-// Find the Number of Rows in argv[2]
 int get_nrows(char *input)
 {
 	FILE *fp;
@@ -169,7 +171,7 @@ int get_nrows(char *input)
 
 	if (fp == NULL)
 	{
-		printf("No File Found");
+		printf("No File");
 		return -1;
 	}
 	else
@@ -185,7 +187,6 @@ int get_nrows(char *input)
 	return count;
 }
 
-// Find the Number of Cols in argv[1]
 int get_ncols(char *input)
 {
 	FILE *fp;
@@ -196,7 +197,7 @@ int get_ncols(char *input)
 
 	if (fp == NULL)
 	{
-		printf("No File Found");
+		printf("No File");
 		return -1;
 	}
 	else
@@ -214,7 +215,7 @@ int get_ncols(char *input)
 	return count;
 }
 
-double *gen_matrix(int nrows, char *input)
+double *gen_mmatrix(int nrows, char *input)
 {
 	FILE *fp;
 	double *m;
@@ -250,7 +251,52 @@ double *gen_matrix(int nrows, char *input)
 
 	return m;
 }
+double *get_col(int nrows, int ncols, int col, char *input)
+{
+	FILE *fp = fopen("mat1.txt", "r");
+	if (fp == NULL)
+	{
+		printf("file not found\n");
+		return -1;
+	}
+	double *m;
+	m = malloc(sizeof(double) * nrows);
+	double *mm = m;
+	if (m == NULL)
+		return -1;
 
+	double chr;
+	int curr_col = 1;
+
+	//iterate to col
+	while (curr_col != col)
+	{
+		fscanf(fp, "%lf", &chr);
+		curr_col++;
+		// printf("curr_col=%d\n",curr_col);
+	}
+
+	int i, j;
+	i = 0;
+	j = 0;
+	// double c;
+	while (i != nrows)
+	{
+		fscanf(fp, "%lf", &chr);
+		// printf("scanning %f\n",chr);
+		if (j % ncols == 0)
+		{
+			*mm = chr;
+			mm++;
+			i++;
+			// printf("adding %f\n",chr);
+		}
+		j++;
+	}
+
+	for (i = 0; i < nrows; i++)
+		printf("%f\n", m[i]);
+}
 double *get_row(int ncols, int row, char *input)
 {
 	FILE *fp;
