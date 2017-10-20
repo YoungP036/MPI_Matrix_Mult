@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #define min(x, y) ((x) < (y) ? (x) : (y))
 // typedef struct _MPI_Status {
 // 	int count;
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
 
 			starttime = MPI_Wtime();
 			numsent = 0;
-
+			print("sizeof C = %d\n",sizeof(c));
 			//(buffer,bufferentrycount,datatype,rank of broadcast root, communicator/handler)
 			MPI_Bcast(b, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
 					MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent + 1, MPI_COMM_WORLD);
 					numsent++;
 				}
+				//we are done, send sentinal(status.MPI_TAG=0)
 				else
 					MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
 			}
@@ -105,18 +107,23 @@ int main(int argc, char *argv[])
 		//slave code here
 		else
 		{
+			//get the matrices
 			MPI_Bcast(b, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			//check matrixes
 			for (i = 0; i < sizeof(b); i++)
 				printf("from %d, b[%d]=%f\n", myid, i, b[i]);
 			for (i = 0; i < sizeof(a); i++)
 				printf("from %d, a[%d]=%f\n", myid, i, a[i]);
+			
+			//if we have more process then rows, they dont need to operate
 			if (myid <= nrows)
 			{
 				while (1)
 				{
 					MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG,
 							 MPI_COMM_WORLD, &status);
+					//break on sentinal
 					if (status.MPI_TAG == 0)
 						break;
 
@@ -136,3 +143,18 @@ int main(int argc, char *argv[])
 	MPI_Finalize();
 	return 0;
 } //end main
+
+int get_row_from_index(int rows, int columns, int index){
+    for(int i=0; i<rows; i++){
+        if(index < (columns * i) + columns && index >= columns * i){
+            return  i;
+        }
+    }
+}
+int get_col_from_index(int rows, int columns, int index){
+    for(int i=0; i<rows; i++){
+        if(index < (columns * i) + columns && index >= columns * i){
+            return index - columns * i;
+        }
+    }
+}

@@ -21,7 +21,7 @@ mmult_omp_timing.o:	mmult_omp_timing.c
 	gcc -w -c -O3 mmult_omp_timing.c
 
 matrix_times_vector:	matrix_times_vector.c
-	mpicc -w -O3 -o matrix_times_vector matrix_times_vector.c
+	mpicc -w -O3 -o matrix_times_vector matrix_times_vector.c -lm
 
 hello:	hello.c
 	mpicc -w -O3 -o hello hello.c
