@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
 			starttime = MPI_Wtime();
 			numsent = 0;
-			print("sizeof C = %d\n",sizeof(c));
+			printf("sizeof C = %d\n",sizeof(c));
 			//(buffer,bufferentrycount,datatype,rank of broadcast root, communicator/handler)
 			MPI_Bcast(b, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
