@@ -194,7 +194,7 @@ int get_ncols(char *input)
 	int colcount = 1;
 	int c;
 
-	fp = fopen(input, "r");
+	fp = fopen(input, "r+");
 
 	if (fp == NULL)
 	{
