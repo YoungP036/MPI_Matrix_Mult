@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 	      MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
         numsent++;
       }//end for
-      print("numsent=%d\n",numsent);
+      printf("numsent=%d\n",numsent);
       for (i = 0; i < nrows; i++) {
 	      MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
 		    MPI_COMM_WORLD, &status);
