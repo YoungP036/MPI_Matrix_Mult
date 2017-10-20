@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
 	{
 		nrows = get_nrows(argv[2]);
 		ncols = get_ncols(argv[1]);
-
+		printf("nrows=%d\n",nrows);
+		printf("ncols=%d\n",ncols);
 		if (nrows != ncols)
 		{
 			printf("Incompatible matrix dimensions");
@@ -54,10 +55,11 @@ int main(int argc, char *argv[])
 		}
 
 		b = (double *)malloc(sizeof(double)*nrows);
+
 		b = get_matrix(nrows, argv[2]);
+		printf("Got 1st matrix\n");
 
 		double *ans = malloc(sizeof(double) * 1);
-
 		c = (double *)malloc(sizeof(double) * nrows);
 
 		if (myid == 0)
@@ -161,7 +163,7 @@ int get_nrows(char *input)
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
-		printf("File input error");
+		printf("File input error\n");
 		return -1;
 	}
 	int row_count = 0;
@@ -181,7 +183,7 @@ int get_ncols(char *input)
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
-		printf("File input error");
+		printf("File input error\n");
 		return -1;
 	}
 	int col_count=1;
@@ -200,7 +202,7 @@ double* get_matrix(int nrows, char *input)
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
-		printf("File input error");
+		printf("File input error\n");
 		return -1;
 	}
 	double *ret_mat;
@@ -229,7 +231,7 @@ double* get_row(int ncols, int row, char *input)
 	FILE *fp;
 	if (fp=fopen(input,"r") == NULL)
 	{
-		printf("File input error");
+		printf("File input error\n");
 		return -1;
 	}
 	double *ret_row;
