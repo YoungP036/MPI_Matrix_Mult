@@ -113,6 +113,9 @@ int main(int argc, char *argv[])
 			MPI_Bcast(b, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			//check matrixes
+			printf("sizeof A = %d\n",sizeof(*a));
+			printf("sizeof B = %d\n",sizeof(*b));
+			// printf("sizeof C = %d\n",sizeof(*c));
 			for (i = 0; i < sizeof(b); i++)
 				printf("from %d, b[%d]=%f\n", myid, i, b[i]);
 			for (i = 0; i < sizeof(a); i++)
