@@ -77,8 +77,10 @@ int main(int argc, char *argv[])
 
 					double* r =(double*)malloc(sizeof(double)*ncols);
 					double* c =(double*)malloc(sizeof(double)*nrows);
-					int curr_row=get_row_from_index(numsent);
-					int curr_col=get_col_from_index(numsent);
+					int curr_row=get_row_from_index(nrows,ncols,numsent);
+					int curr_col=get_col_from_index(nrows,ncols,numsent);
+					printf("curr_row=%d\n",curr_row);
+					printf("curr_col=%d\n",curr_col);
 					for(j=(curr_row*ncols);j<ncols;j++){
 						r[j]=a[j];
 						printf("row[%d]=%f\n",j,r[j]);
