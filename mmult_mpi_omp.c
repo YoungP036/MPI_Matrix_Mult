@@ -207,6 +207,7 @@ int get_ncols(char *input)
 		{
 			if (c == ' ')
 			{
+				printf("colcount=%d\n",colcount);
 				colcount++;
 			}
 		}
