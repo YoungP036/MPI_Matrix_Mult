@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
     else {
       MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
       for(i=0;i<sizeof(b);i++)
-        printf("from %d, %f",myid,b[i]);
+        printf("from %d, %f\n",myid,b[i]);
       if (myid <= nrows) {
 	      while(1) {
 	        MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG, 
