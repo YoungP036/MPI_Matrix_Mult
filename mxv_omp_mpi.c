@@ -1,5 +1,5 @@
 /** PRETTY SURE THIS IS THE WINNER, JUST ADJUST FOR MATRIX INSTEAD OF VECTOR**/
-#include <mpi.h>
+#include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -43,33 +43,33 @@ int main(int argc, char* argv[])
 				for (j = 0; j < ncols; j++) 
 					aa[i*ncols + j] = (double)rand()/RAND_MAX;
 				
-		starttime = MPI_Wtime();
-		numsent = 0;
-		MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
-		for (i = 0; i < min(numprocs-1, nrows); i++) {
-			for (j = 0; j < ncols; j++) 
-				buffer[j] = aa[i * ncols + j];			  
-			MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
-			numsent++;
-		}
-		
-		for (i = 0; i < nrows; i++) {
-			MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, &status);
-			sender = status.MPI_SOURCE;
-			anstype = status.MPI_TAG;
-			c[anstype-1] = ans;
-			if (numsent < nrows) {
+			starttime = MPI_Wtime();
+			numsent = 0;
+			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			for (i = 0; i < min(numprocs-1, nrows); i++) {
 				for (j = 0; j < ncols; j++) 
-					buffer[j] = aa[numsent*ncols + j];
-				  
-				MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent+1,MPI_COMM_WORLD);
+					buffer[j] = aa[i * ncols + j];			  
+				MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
 				numsent++;
+			}
+			
+			for (i = 0; i < nrows; i++) {
+				MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, &status);
+				sender = status.MPI_SOURCE;
+				anstype = status.MPI_TAG;
+				c[anstype-1] = ans;
+				if (numsent < nrows) {
+					for (j = 0; j < ncols; j++) 
+						buffer[j] = aa[numsent*ncols + j];
+					
+					MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent+1,MPI_COMM_WORLD);
+					numsent++;
+				} 
+				else 
+					MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
 			} 
-			else 
-				MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
-		} 
-		endtime = MPI_Wtime();
-		printf("%f\n",(endtime - starttime));
+			endtime = MPI_Wtime();
+			printf("%f\n",(endtime - starttime));
 		}
 		else {
 			// Slave Code goes here
@@ -93,5 +93,12 @@ int main(int argc, char* argv[])
 	else
 		fprintf(stderr, "Usage matrix_times_vector <size>\n");	
 	MPI_Finalize();
+	
+	//compare using traditional mmult
+	double *ans2;
+	ans2  = malloc(sizeof(double) * nrows * nrows);	
+	mmult(ans2, aa, nrows, ncols, b, ncols, nrows);
+	compare_matrices(ans, ans2, nrows, nrows);
+	
 	return 0;
 }

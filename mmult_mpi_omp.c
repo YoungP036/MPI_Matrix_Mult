@@ -26,31 +26,42 @@ int main(int argc, char* argv[])
 	double starttime, endtime;
 	MPI_Status status;
 	/* insert other global variables here */
+
+
+	/*   								  */
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 	if (argc > 1) {
+		//command line params
 		nrows = atoi(argv[1]);
-		ncols = nrows;
+		ncols = atoi(argv[2]);
 		if (myid == 0) {
-		// Master Code goes here
-		a = gen_matrix(nrows, ncols);
-		b = gen_matrix(ncols, nrows);
-		c1 = malloc(sizeof(double) * nrows * nrows); 
-		starttime = MPI_Wtime();
-		/* Insert your master code here to store the product into c1 */
-		endtime = MPI_Wtime();
-		printf("%f\n",(endtime - starttime));
-		c2  = malloc(sizeof(double) * nrows * nrows);
-		mmult(c2, a, nrows, ncols, b, ncols, nrows);
-		compare_matrices(c2, c1, nrows, nrows);
+			// Master Code goes here
+			a = gen_matrix(nrows, ncols);
+			b = gen_matrix(ncols, nrows);
+			c1 = malloc(sizeof(double) * nrows * nrows); 
+			starttime = MPI_Wtime();
+			/* Insert your master code here to store the product into c1 */
+			
+			
+			
+			/*END MASTER CODE */
+
+			endtime = MPI_Wtime();
+			printf("%f\n",(endtime - starttime));
+			c2  = malloc(sizeof(double) * nrows * nrows);
+			mmult(c2, a, nrows, ncols, b, ncols, nrows);
+			compare_matrices(c2, c1, nrows, nrows);
 		}//end inner if
 		else {
-      // Slave Code goes here
+			  // Slave Code goes here
+			  
+
     	}//end inner else
 	}//end outer if 
 	else {
-    fprintf(stderr, "Usage matrix_times_vector <size>\n");
+   		fprintf(stderr, "Usage matrix_times_vector <size>\n");
   	}//end outer else
 	MPI_Finalize();
 	return 0;

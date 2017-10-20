@@ -30,9 +30,7 @@ int main(int argc, char* argv[])
     b = (double*)malloc(sizeof(double) * ncols);
     c = (double*)malloc(sizeof(double) * nrows);
     buffer = (double*)malloc(sizeof(double) * ncols);
-    master = 0;
-    
-    //"parent"
+    master = 0;    
     if (myid == master) {
       // Master Code goes here
       for (i = 0; i < nrows; i++) {
@@ -43,19 +41,16 @@ int main(int argc, char* argv[])
       
       starttime = MPI_Wtime();
       numsent = 0;
-      //broadcasts a msg from root to all other processors
       MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
       for (i = 0; i < min(numprocs-1, nrows); i++) {
 	      for (j = 0; j < ncols; j++) {
 	        buffer[j] = a[i * ncols + j];
 	      }
-	      //blocking send to processor i+1  
 	      MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
 	      numsent++;
       }//end for
       
       for (i = 0; i < nrows; i++) {
-		  //read from MPI_ANY_SOURCE(MPI flag for all)
 	      MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
 		    MPI_COMM_WORLD, &status);
 	      sender = status.MPI_SOURCE;
@@ -70,14 +65,10 @@ int main(int argc, char* argv[])
         else
 	        MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
       } 
-      //time elapsed since some time in the past
-      //time in the past is guarenteed to not change during process lifetime
       endtime = MPI_Wtime();
       printf("%f\n",(endtime - starttime));
     }
-    //NOT PARENT 
     else {
-      // Slave Code goes here
       MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
       if (myid <= nrows) {
 	      while(1) {
