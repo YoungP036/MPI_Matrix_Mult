@@ -78,13 +78,13 @@ int main(int argc, char *argv[])
 					double* c =(double*)malloc(sizeof(double)*nrows);
 					for(j=0;j<ncols;j++){
 						r[j]=a[j];
-						printf("c[%d]=%f\n",j,r[j]);
+						printf("row[%d]=%f\n",j,r[j]);
 					}
 					int k=0;
 					for(j=0;j<nrows*ncols;j+=ncols){
 						c[k]=b[j];
 						k++;
-						printf("c[%d]=%f\n",k,c[k]);
+						printf("col[%d]=%f\n",k,c[k]);
 					}
 					numsent++;
 					numLeft--;
@@ -132,10 +132,10 @@ int main(int argc, char *argv[])
 			printf("sizeof A = %d\n",sizeof(*a));
 			printf("sizeof B = %d\n",sizeof(*b));
 			// printf("sizeof C = %d\n",sizeof(*c));
-			for (i = 0; i < ncols*nrows; i++)
-				printf("from %d, b[%d]=%f\n", myid, i, b[i]);
-			for (i = 0; i < ncols*nrows; i++)
-				printf("from %d, a[%d]=%f\n", myid, i, a[i]);
+			// for (i = 0; i < ncols*nrows; i++)
+			// 	printf("from %d, b[%d]=%f\n", myid, i, b[i]);
+			// for (i = 0; i < ncols*nrows; i++)
+			// 	printf("from %d, a[%d]=%f\n", myid, i, a[i]);
 			
 			//if we have more process then rows, they dont need to operate
 			if (myid <= nrows)
