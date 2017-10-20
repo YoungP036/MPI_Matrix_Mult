@@ -36,12 +36,21 @@ int main(int argc, char* argv[])
       // Master Code goes here
 
       //populate matrices a and b
-      for (i = 0; i < nrows; i++) 
-	      for (j = 0; j < ncols; j++) 
-	        a[i*ncols + j] = (double)rand()/RAND_MAX;
-      for(i=0;i<ncols;i++)
-        for(j=0; j<nrows; j++)
-          b[i*nrows+j]=(double)rand()/RAND_MAX;
+      printf("**A**\n");
+      for (i = 0; i < nrows; i++){
+        for (j = 0; j < ncols; j++){
+			a[i*ncols + j] = (double)rand()/RAND_MAX;
+			printf(" %f",a[i*ncols+j]);
+		}
+		printf("\n");
+    }
+      for(i=0;i<ncols;i++){
+        for(j=0; j<nrows; j++){
+		  b[i*nrows+j]=(double)rand()/RAND_MAX;
+		  printf(" %f",b[i*nrows+j]);
+		}
+		printf("\n");
+	}
       
       starttime = MPI_Wtime();
       numsent = 0;
@@ -52,7 +61,7 @@ int main(int argc, char* argv[])
       for (i = 0; i < min(numprocs-1, nrows); i++) {
         //get a row per process
 	      for (j = 0; j < ncols; j++) {
-	        buffer[j] = a[i * ncols + j];
+	    	buffer[j] = a[i * ncols + j];
         }
         //send row
 	      MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
