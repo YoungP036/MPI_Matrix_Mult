@@ -74,14 +74,17 @@ int main(int argc, char *argv[])
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			while(numsent<(nrows*ncols)){
 				for(i=0;i<min(numprocs-1,numLeft);i++){
+
 					double* r =(double*)malloc(sizeof(double)*ncols);
 					double* c =(double*)malloc(sizeof(double)*nrows);
-					for(j=0;j<ncols;j++){
+					int curr_row=get_row_from_index(numsent);
+					int curr_col=get_col_from_index(numsent);
+					for(j=(curr_row*ncol);j<ncols;j++){
 						r[j]=a[j];
 						printf("row[%d]=%f\n",j,r[j]);
 					}
 					int k=0;
-					for(j=0;j<nrows*ncols;j+=ncols){
+					for(j=current_col;j<nrows*ncols;j+=ncols){
 						c[k]=b[j];
 						k++;
 						printf("col[%d]=%f\n",k,c[k]);
