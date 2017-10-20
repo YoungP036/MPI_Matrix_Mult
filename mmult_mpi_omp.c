@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 int get_nrows(char *input)
 {
 	FILE *fp;
-	int colcount = 0;
+	int rowcount = 0;
 	int cols = 0;
 	int c;
 
@@ -179,7 +179,36 @@ int get_nrows(char *input)
 		while ((c = fgetc(fp)) != EOF)
 		{
 			if (c == '\n')
+				rowcount++;
+		}
+	}
+
+	fclose(fp);
+	return rowcount;
+}
+
+//count number of values between line.start and line.end
+int get_ncols(char *input)
+{
+	FILE *fp;
+	int colcount = 1;
+	int c;
+
+	fp = fopen(input, "r");
+
+	if (fp == NULL)
+	{
+		printf("No File Found");
+		return -1;
+	}
+	else
+	{
+		while ((c = fgetc(fp)) != '\n')
+		{
+			if (c == ' ')
+			{
 				colcount++;
+			}
 		}
 	}
 
@@ -187,25 +216,7 @@ int get_nrows(char *input)
 	return colcount;
 }
 
-//count number of values between line.start and line.end
-int get_ncols(char *input)
-{
-	printf("in get_ncols\n");
-	FILE *fp;
-	if (fp = fopen(input, "r") == NULL)
-	{
-		printf("File input error\n");
-		return -1;
-	}
-	int col_count = 1;
-	int c;
-	while ((c = fgetc(fp)) != '\n')
-		if (c == ' ')
-			col_count++;
-	fclose(fp);
-	printf("leaving get_ncols\n");
-	return col_count;
-}
+
 
 double *get_matrix(int nrows, char *input)
 {
