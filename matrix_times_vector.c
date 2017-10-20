@@ -26,30 +26,39 @@ int main(int argc, char* argv[])
   if (argc > 1) {
     nrows = atoi(argv[1]);
     ncols = nrows;
-    a = (double*)malloc(sizeof(double) * nrows * ncols);
-    b = (double*)malloc(sizeof(double) * ncols);
-    c = (double*)malloc(sizeof(double) * nrows);
-    buffer = (double*)malloc(sizeof(double) * ncols);
+    a = (double*)malloc(sizeof(double)*nrows*ncols);
+    b = (double*)malloc(sizeof(double)*ncols*nrows);
+    c = (double*)malloc(sizeof(double)*nrows*ncols);
+    // slice = (double*)malloc(sizeof(double)*ncols)
+    buffer = (double*)malloc(sizeof(double)*ncols);
     master = 0;    
     if (myid == master) {
       // Master Code goes here
-      for (i = 0; i < nrows; i++) {
-	      for (j = 0; j < ncols; j++) {
+
+      //populate matrices a and b
+      for (i = 0; i < nrows; i++) 
+	      for (j = 0; j < ncols; j++) 
 	        a[i*ncols + j] = (double)rand()/RAND_MAX;
-	      }//end inner for
-      }//end outer for
+      for(i=0;i<ncols;i++)
+        for(j=0; j<nrows; j++)
+          b[i*nrows+j]=(double)rand()/RAND_MAX;
       
       starttime = MPI_Wtime();
       numsent = 0;
+      
+      //(buffer,bufferentrycount,datatype,rank of broadcast root, communicator/handler)
       MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
+      //for each process
       for (i = 0; i < min(numprocs-1, nrows); i++) {
+        //get a row per process
 	      for (j = 0; j < ncols; j++) {
 	        buffer[j] = a[i * ncols + j];
-	      }
+        }
+        //send row
 	      MPI_Send(buffer, ncols, MPI_DOUBLE, i+1, i+1, MPI_COMM_WORLD);
-	      numsent++;
+        numsent++;
       }//end for
-      
+      print("numsent=%d\n",numsent);
       for (i = 0; i < nrows; i++) {
 	      MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, 
 		    MPI_COMM_WORLD, &status);
@@ -68,6 +77,7 @@ int main(int argc, char* argv[])
       endtime = MPI_Wtime();
       printf("%f\n",(endtime - starttime));
     }
+    //slave code here
     else {
       MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
       if (myid <= nrows) {

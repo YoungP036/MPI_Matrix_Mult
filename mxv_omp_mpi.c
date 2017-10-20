@@ -73,13 +73,13 @@ int main(int argc, char* argv[])
 					MPI_Send(MPI_BOTTOM, 0, MPI_DOUBLE, sender, 0, MPI_COMM_WORLD);
 			} 
 			endtime = MPI_Wtime();
-					//compare using traditional mmult
+			//compare using traditional mmult
 			double *ans2;
 			ans2  = malloc(sizeof(double) * nrows * nrows);	
 			mmult(ans2, aa, nrows, ncols, b, ncols, nrows);
 			compare_matrices(ans, ans2, nrows, nrows);
 			printf("%f\n",(endtime - starttime));
-		}
+		}//end master
 		else {
 			// Slave Code goes here
 			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);

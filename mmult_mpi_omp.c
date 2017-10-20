@@ -50,8 +50,7 @@ int main(int argc, char* argv[])
 
 			endtime = MPI_Wtime();
 			printf("%f\n",(endtime - starttime));
-			c2  = malloc(sizeof(double) * nrows * nrows);
-			mmult(c2, a, nrows, ncols, b, ncols, nrows);
+v			mmult(c2, a, nrows, ncols, b, ncols, nrows);
 			compare_matrices(c2, c1, nrows, nrows);
 		}//end inner if
 		else {
