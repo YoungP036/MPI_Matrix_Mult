@@ -68,12 +68,28 @@ int main(int argc, char *argv[])
 
 			starttime = MPI_Wtime();
 			numsent = 0;
-			printf("sizeof A = %d\n",sizeof(*a));
-			printf("sizeof B = %d\n",sizeof(*b));
-			printf("sizeof C = %d\n",sizeof(*c));
+			int numLeft=nrows*ncols;
 			//(buffer,bufferentrycount,datatype,rank of broadcast root, communicator/handler)
 			MPI_Bcast(b, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			MPI_Bcast(a, ncols * nrows, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			while(numsent<(nrows*ncols)){
+				for(i=0;i<min(numprocs-1,numLeft);i++){
+					double* r =(double*)malloc(sizeof(double)*ncols);
+					double* c =(double*)malloc(sizeof(double)*nrows);
+					for(j=0;j<ncols;j++){
+						r[j]=a[j];
+						printf("c[%d]=%f\n",j,r[j]);
+					}
+					int k=0;
+					for(j=0;j<nrows*ncols;j+=ncols){
+						c[k]=b[j];
+						k++;
+						printf("c[%d]=%f\n",k,c[k]);
+					}
+					numsent++;
+					numLeft--;
+				}
+			}
 			//for each process
 			for (i = 0; i < min(numprocs - 1, nrows); i++)
 			{
@@ -116,9 +132,9 @@ int main(int argc, char *argv[])
 			printf("sizeof A = %d\n",sizeof(*a));
 			printf("sizeof B = %d\n",sizeof(*b));
 			// printf("sizeof C = %d\n",sizeof(*c));
-			for (i = 0; i < sizeof(b); i++)
+			for (i = 0; i < ncols*nrows; i++)
 				printf("from %d, b[%d]=%f\n", myid, i, b[i]);
-			for (i = 0; i < sizeof(a); i++)
+			for (i = 0; i < ncols*nrows; i++)
 				printf("from %d, a[%d]=%f\n", myid, i, a[i]);
 			
 			//if we have more process then rows, they dont need to operate
