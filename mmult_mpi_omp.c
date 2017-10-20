@@ -46,15 +46,15 @@ int main(int argc, char *argv[])
 	{
 		nrows = get_nrows(argv[2]);
 		ncols = get_ncols(argv[1]);
-		printf("nrows=%d\n",nrows);
-		printf("ncols=%d\n",ncols);
+		printf("nrows=%d\n", nrows);
+		printf("ncols=%d\n", ncols);
 		if (nrows != ncols)
 		{
 			printf("Incompatible matrix dimensions");
 			return -1;
 		}
 
-		b = (double *)malloc(sizeof(double)*nrows);
+		b = (double *)malloc(sizeof(double) * nrows);
 		b = get_matrix(nrows, argv[2]);
 		printf("Got 1st matrix\n");
 
@@ -162,23 +162,29 @@ int main(int argc, char *argv[])
 //count number of newlines between file.start and file.end
 int get_nrows(char *input)
 {
-	printf("in get nrows\n");
 	FILE *fp;
-	if (fp=fopen(input,"r") == NULL)
-	{
-		printf("File input error\n");
-		return -1;
-	}
-	int row_count = 0;
+	int colcount = 0;
 	int cols = 0;
 	int c;
 
-	while ((c = fgetc(fp)) != EOF)
-		if (c == '\n')
-			row_count++;
+	fp = fopen(input, "r+");
+
+	if (fp == NULL)
+	{
+		printf("No File Found");
+		return -1;
+	}
+	else
+	{
+		while ((c = fgetc(fp)) != EOF)
+		{
+			if (c == '\n')
+				colcount++;
+		}
+	}
+
 	fclose(fp);
-	printf("leaving get nrows\n");
-	return row_count;
+	return count;
 }
 
 //count number of values between line.start and line.end
@@ -186,39 +192,38 @@ int get_ncols(char *input)
 {
 	printf("in get_ncols\n");
 	FILE *fp;
-	if (fp=fopen(input,"r") == NULL)
+	if (fp = fopen(input, "r") == NULL)
 	{
 		printf("File input error\n");
 		return -1;
 	}
-	int col_count=1;
+	int col_count = 1;
 	int c;
-	while ((c = fgetc(fp)) != '\n')	
-		if (c == ' ')		
-			col_count++;		
+	while ((c = fgetc(fp)) != '\n')
+		if (c == ' ')
+			col_count++;
 	fclose(fp);
 	printf("leaving get_ncols\n");
 	return col_count;
 }
 
-
-double* get_matrix(int nrows, char *input)
+double *get_matrix(int nrows, char *input)
 {
 	printf("in get_matrix\n");
 	//guard against file and malloc failures
 	FILE *fp;
-	if (fp=fopen(input,"r") == NULL)
+	if (fp = fopen(input, "r") == NULL)
 	{
 		printf("File input error\n");
 		return -1;
 	}
 	double *ret_mat;
-	if((ret_mat = malloc(sizeof(double) * nrows))==NULL)
-		return -1;	
-	
+	if ((ret_mat = malloc(sizeof(double) * nrows)) == NULL)
+		return -1;
+
 	double *working_mat = ret_mat;
 	double c;
-	
+
 	int i;
 	//read doubles into c, then store in the "matrix" we're pointing to
 	for (i = 0; i < nrows; i++)
@@ -226,25 +231,25 @@ double* get_matrix(int nrows, char *input)
 		fscanf(fp, "%lf", &c);
 		*working_mat = c;
 		working_mat++;
-	}	
+	}
 
 	fclose(fp);
 	printf("leaving get matrix\n");
 	return ret_mat;
 }
 
-double* get_row(int ncols, int row, char *input)
+double *get_row(int ncols, int row, char *input)
 {
 	printf("in getting row\n");
 	//guard against file and malloc failures
 	FILE *fp;
-	if (fp=fopen(input,"r") == NULL)
+	if (fp = fopen(input, "r") == NULL)
 	{
 		printf("File input error\n");
 		return -1;
 	}
 	double *ret_row;
-	if((ret_row = malloc(sizeof(double) * ncols)) == NULL)
+	if ((ret_row = malloc(sizeof(double) * ncols)) == NULL)
 		return -1;
 
 	double *working_row = ret_row;
@@ -254,8 +259,8 @@ double* get_row(int ncols, int row, char *input)
 	double value;
 	while (curr_row != row)
 	{
-		if ((value = fgetc(fp)) == '\n')		
-			curr_row++;		
+		if ((value = fgetc(fp)) == '\n')
+			curr_row++;
 	}
 
 	int i;
