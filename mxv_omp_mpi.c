@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/times.h>
 #define min(x, y) ((x)<(y)?(x):(y))
 
 /** 
@@ -10,6 +11,9 @@
     mpi to distribute the computation among nodes and omp
     to distribute the computation among threads.
 */
+double* gen_matrix(int n, int m);
+int mmult(double *c, double *a, int aRows, int aCols, double *b, int bRows, int bCols);
+void compare_matrix(double *a, double *b, int nRows, int nCols);
 
 int main(int argc, char* argv[])
 {
