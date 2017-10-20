@@ -11,7 +11,7 @@ void compare_matrix(double *a, double *b, int nRows, int nCols);
 
 int get_nrows(char *);
 int get_ncols(char *);
-double *get_matrix(int, char *);
+double *gen_matrix(int, char *);
 double *get_row(int, int, char *);
 
 /**
@@ -44,26 +44,25 @@ int main(int argc, char *argv[])
 
 	if (argc > 1)
 	{
+		/* User Submitted Matrix Handling  */
 		nrows = get_nrows(argv[2]);
 		ncols = get_ncols(argv[1]);
-		printf("nrows=%d\n", nrows);
-		printf("ncols=%d\n", ncols);
+
 		if (nrows != ncols)
 		{
-			printf("Incompatible matrix dimensions");
+			printf("Invalid Matrix Parameters.");
 			return -1;
 		}
 
 		b = (double *)malloc(sizeof(double) * nrows);
-		b = get_matrix(nrows, argv[2]);
-		printf("Got 1st matrix\n");
+		b = gen_matrix(nrows, argv[2]);
 
 		double *ans = malloc(sizeof(double) * 1);
+
 		c = (double *)malloc(sizeof(double) * nrows);
 
 		if (myid == 0)
 		{
-			printf("Master starting\n");
 			// Master Code goes here
 			aa = malloc(sizeof(double) * nrows * ncols);
 			bb = malloc(sizeof(double) * nrows);
@@ -71,13 +70,13 @@ int main(int argc, char *argv[])
 
 			/* Insert your master code here to store the product into cc1 */
 			starttime = MPI_Wtime();
+
 			MPI_Bcast(b, ncols, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 			int i;
 			for (i = 1; i < nrows + 1; i++)
 			{
 				double *row = get_row(nrows, i, argv[1]);
-				printf("row obtained\n");
 				double *test = row;
 
 				int t;
@@ -113,7 +112,6 @@ int main(int argc, char *argv[])
 				printf("%lf\n", *cc1);
 				cc1++;
 			}
-			printf("master ending\n");
 		}
 		else
 		{
@@ -159,11 +157,11 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-//count number of newlines between file.start and file.end
+// Find the Number of Rows in argv[2]
 int get_nrows(char *input)
 {
 	FILE *fp;
-	int rowcount = 0;
+	int count = 0;
 	int cols = 0;
 	int c;
 
@@ -179,22 +177,22 @@ int get_nrows(char *input)
 		while ((c = fgetc(fp)) != EOF)
 		{
 			if (c == '\n')
-				rowcount++;
+				count++;
 		}
 	}
 
 	fclose(fp);
-	return rowcount;
+	return count;
 }
 
-//count number of values between line.start and line.end
+// Find the Number of Cols in argv[1]
 int get_ncols(char *input)
 {
 	FILE *fp;
-	int colcount = 1;
+	int count = 1;
 	int c;
 
-	fp = fopen(input, "r+");
+	fp = fopen(input, "r");
 
 	if (fp == NULL)
 	{
@@ -207,82 +205,95 @@ int get_ncols(char *input)
 		{
 			if (c == ' ')
 			{
-				printf("colcount=%d\n",colcount);
-				colcount++;
+				count++;
 			}
 		}
 	}
 
 	fclose(fp);
-	return colcount;
+	return count;
 }
 
-
-
-double *get_matrix(int nrows, char *input)
+double *gen_matrix(int nrows, char *input)
 {
-	printf("in get_matrix\n");
-	//guard against file and malloc failures
 	FILE *fp;
-	if (fp = fopen(input, "r") == NULL)
+	double *m;
+	m = malloc(sizeof(double) * nrows);
+	double *mm = m;
+
+	if (m == NULL)
 	{
-		printf("File input error\n");
 		return -1;
 	}
-	double *ret_mat;
-	if ((ret_mat = malloc(sizeof(double) * nrows)) == NULL)
-		return -1;
 
-	double *working_mat = ret_mat;
 	double c;
 
-	int i;
-	//read doubles into c, then store in the "matrix" we're pointing to
-	for (i = 0; i < nrows; i++)
+	fp = fopen(input, "r");
+
+	if (fp == NULL)
 	{
-		fscanf(fp, "%lf", &c);
-		*working_mat = c;
-		working_mat++;
+		printf("No File Found");
+		return -1;
+	}
+	else
+	{
+		int i;
+		for (i = 0; i < nrows; i++)
+		{
+			fscanf(fp, "%lf", &c);
+			*mm = c;
+			mm++;
+		}
 	}
 
 	fclose(fp);
-	printf("leaving get matrix\n");
-	return ret_mat;
+
+	return m;
 }
 
 double *get_row(int ncols, int row, char *input)
 {
-	printf("in getting row\n");
-	//guard against file and malloc failures
 	FILE *fp;
-	if (fp = fopen(input, "r") == NULL)
+	double *m;
+
+	m = malloc(sizeof(double) * ncols);
+	double *mm = m;
+
+	if (m == NULL)
 	{
-		printf("File input error\n");
 		return -1;
 	}
-	double *ret_row;
-	if ((ret_row = malloc(sizeof(double) * ncols)) == NULL)
+
+	double c;
+	int r = 1;
+
+	fp = fopen(input, "r");
+
+	if (fp == NULL)
+	{
+		printf("No File Found");
 		return -1;
-
-	double *working_row = ret_row;
-	int curr_row = 1;
-
-	//iterate to row we want using newlines as indicators
-	double value;
-	while (curr_row != row)
+	}
+	else
 	{
-		if ((value = fgetc(fp)) == '\n')
-			curr_row++;
+		while (r != row)
+		{
+			if ((c = fgetc(fp)) == '\n')
+			{
+				r++;
+			}
+		}
+
+		int i;
+		for (i = 0; i < ncols; i++)
+		{
+			fscanf(fp, "%lf", &c);
+			*mm = c;
+			mm++;
+		}
 	}
 
-	int i;
-	for (i = 0; i < ncols; i++)
-	{
-		fscanf(fp, "%lf", &value);
-		*working_row = value;
-		working_row++;
-	}
 	fclose(fp);
-	printf("leaving get row\n");
-	return ret_row;
+
+	return m;
 }
