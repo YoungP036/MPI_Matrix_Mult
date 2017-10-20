@@ -184,7 +184,7 @@ int get_nrows(char *input)
 	}
 
 	fclose(fp);
-	return count;
+	return colcount;
 }
 
 //count number of values between line.start and line.end
