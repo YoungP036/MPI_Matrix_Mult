@@ -8,10 +8,10 @@
 double *gen_mmatrix(int nrows, char *input);
 int mmult(double *c, double *a, int aRows, int aCols, double *b, int bRows, int bCols);
 void compare_matrix(double *a, double *b, int nRows, int nCols);
-double *get_col(int nrows, int ncols, int col, char *input);
 int get_nrows(char *input);
 int get_ncols(char *input);
 double *get_row(int, int, char *input);
+void get_col(int nrows, int ncols,int col, char *file, double *ret);
 
 /**
     Program to multiply a matrix times a matrix using both
@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
 	double starttime, endtime;
 	MPI_Status status;
 	/* insert other global variables here */
-	int nrows, ncols;
-	double *b, *c;
+	int nrowsA, ncolsA, nrowsB, ncolsB;
+	double **c;
 	double *times;
-	
+	double *curr_row, *curr_col;
 	double total_times;
 	int run_index;
 	int nruns;
@@ -45,225 +45,135 @@ int main(int argc, char *argv[])
 	if (argc > 1)
 	{
 		/* User Submitted Matrix Handling  */
-		nrows = get_nrows(argv[2]);
-		ncols = get_ncols(argv[1]);
+		nrowsB = get_nrows(argv[2]);
+		ncolsB=get_ncols(argv[2]);
+		nrowsA=get_nrows(argv[1]);
+		ncolsA = get_ncols(argv[1]);
 
-		if (nrows != ncols)
+		if (nrowsB != ncolsA)
 		{
 			printf("Invalid Matrix Parameters.");
 			return -1;
 		}
 
-		b = (double *)malloc(sizeof(double) * nrows);
-		b = gen_mmatrix(nrows, argv[2]);
-
-		double *ans = malloc(sizeof(double) * 1);
-
-		c = (double *)malloc(sizeof(double) * nrows);
+		double *my_ans = malloc(sizeof(double) * 1);
+		int i,j;
+		c=(double**)malloc(nrowsA*sizeof(double*));
+		for(i=0;i<nrowsA;i++)
+			for(j=0;j<ncolsB;j++)
+				c[i]=(double*)malloc(ncolsB*sizeof(double));
 
 		if (myid == 0)
 		{
 			// Master Code goes here
-			aa = malloc(sizeof(double) * nrows * ncols);
-			bb = malloc(sizeof(double) * nrows);
-			cc1 = malloc(sizeof(double) * nrows);
-
+			curr_row = malloc(sizeof(double) *ncolsA);
+			curr_col = malloc(sizeof(double) * nrowsB);
+			int master_row=1;
+			int master_col=1;
+			double curr_ans;
 			/* Insert your master code here to store the product into cc1 */
 			starttime = MPI_Wtime();
+			i=0;
+			while(i<nrowsA*ncolsB)
+				for(j=0;j<numprocs&&i<nrowsA*ncolsB;j++){
+					get_col(nrowsB,ncolsB,curr_col,argv[2],curr_col);
+					get_row(ncolsA,curr_row,argv[1]);
 
-			MPI_Bcast(b, ncols, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-			int i;
-			for (i = 1; i < nrows + 1; i++)
-			{
-				//get current row
-				double *row = get_row(nrows, i, argv[1]);
-				// double *test = row;
-
-				// int t;
-				// for (t = 0; t < nrows; t++)
-				// {
-				// 	//printf("%lf\n", *test);
-				// 	test++;
-				// }
-
-				//how we communicate current row
-				status.MPI_TAG = i;
-
-				int rank = i % 3;
-				if (rank == 0)
-					rank = 3;
-
-				MPI_Send(row, ncols, MPI_DOUBLE, rank, i, MPI_COMM_WORLD);
-			}
-
-			for (i = 0; i < nrows; i++)
-			{
-				MPI_Recv(ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-				anstype = status.MPI_TAG;
-				cc1[anstype - 1] = *ans;
-			}
-
+					//total of nrowsA*ncolsB sub-answers to compute
+					//TODO send a row
+					//TODO send a col
+					//TODO indicate sub-answers position in C, tags?
+					i++;
+				}
+		
 			endtime = MPI_Wtime();
-
+			//print answer
+			for(i=0;i<nrowsA;i++){
+				printf("\n");
+				for(j=0;j<ncolsB;j++)
+					printf(" %f",c[i][j]);
+			}
 			printf("%f\n", (endtime - starttime));
 
-			int x;
-			for (x = 0; x < nrows; x++)
-			{
-				printf("%lf\n", *cc1);
-				cc1++;
-			}
+
 		}
 		else
 		{
 			//note ncols=nrows in mat 2
 			// Slave Code goes here
-			MPI_Bcast(b, nrows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-			double *buf = malloc(sizeof(double) * nrows);
-
+			double *my_row = malloc(sizeof(double) * ncolsA);
+			double *my_col = malloc(sizeof(double)*nrowsB);
 			int i;
-			for (i = 0; i < nrows; i++)
+			while(1)
 			{
-				MPI_Recv(buf, nrows, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+				//TODO recv a row into my_row
+				//TODO recv a col into my_col
 
-				double *buffer = buf;
-				int t;
-				for (t = 0; t < nrows; t++)
-				{
-					//printf("%lf\n", *buffer);
-					buffer++;
-				}
+				//check for termination sentinal
+				if (status.MPI_TAG == 0)
+					break;			
 
 				rown = status.MPI_TAG;
 
-				int j;
-				for (j = 0; j < nrows; j++)
-				{
-					*ans += b[j] * buf[j];
-				}
+				for (j = 0; j < ncolsA; j++)
+					*my_ans += my_row[i] * my_col[i];
 
-				//				printf("%lf\n", *ans);
-				//				printf("***********");
-
-				MPI_Send(ans, 1, MPI_DOUBLE, 0, rown, MPI_COMM_WORLD);
-			}
-		}
+				//TODO send ans with position
+			}//end inf while
+		}//end slave
 	}
 	else
-	{
 		fprintf(stderr, "Usage matrix_times_vector <size>\n");
-	}
-
+	
 	MPI_Finalize();
-
 	return 0;
 }
 
 int get_nrows(char *input)
 {
 	FILE *fp;
-	int count = 0;
-	int cols = 0;
-	int c;
-
-	fp = fopen(input, "r+");
-
-	if (fp == NULL)
-	{
-		printf("No File");
+	if(fp=fopen(input,"r+")==NULL){
+		printf("No file\n");
 		return -1;
 	}
-	else
-	{
-		while ((c = fgetc(fp)) != EOF)
-		{
-			if (c == '\n')
-				count++;
-		}
-	}
+	int row_count = 0;
+	int c;
 
+	while ((c = fgetc(fp)) != EOF)
+		if (c == '\n')
+			row_count++;
+	
 	fclose(fp);
-	return count;
+	return row_count;
 }
 
 int get_ncols(char *input)
 {
 	FILE *fp;
-	int count = 1;
+	if((fp=fopen(input,"r"))==NULL){
+		printf("No file\n");
+		return -1;
+	}
+	int col_count = 1;
 	int c;
 
-	fp = fopen(input, "r");
-
-	if (fp == NULL)
-	{
-		printf("No File");
-		return -1;
-	}
-	else
-	{
-		while ((c = fgetc(fp)) != '\n')
-		{
-			if (c == ' ')
-			{
-				count++;
-			}
-		}
-	}
+	while ((c = fgetc(fp)) != '\n')
+		if (c == ' ')
+			col_count++;
 
 	fclose(fp);
-	return count;
+	return col_count;
 }
 
-double *gen_mmatrix(int nrows, char *input)
+void get_col(int nrows, int ncols,int col, char *file, double *ret)
 {
-	FILE *fp;
-	double *m;
-	m = malloc(sizeof(double) * nrows);
-	double *mm = m;
+	FILE *fp = fopen(file, "r");
 
-	if (m == NULL)
-	{
-		return -1;
-	}
-
-	double c;
-
-	fp = fopen(input, "r");
-
-	if (fp == NULL)
-	{
-		printf("No File Found");
-		return -1;
-	}
-	else
-	{
-		int i;
-		for (i = 0; i < nrows; i++)
-		{
-			fscanf(fp, "%lf", &c);
-			*mm = c;
-			mm++;
-		}
-	}
-
-	fclose(fp);
-
-	return m;
-}
-double *get_col(int nrows, int ncols, int col, char *input)
-{
-	FILE *fp = fopen("mat1.txt", "r");
 	if (fp == NULL)
 	{
 		printf("file not found\n");
 		return -1;
 	}
-	double *m;
-	m = malloc(sizeof(double) * nrows);
-	double *mm = m;
-	if (m == NULL)
-		return -1;
 
 	double chr;
 	int curr_col = 1;
@@ -273,29 +183,22 @@ double *get_col(int nrows, int ncols, int col, char *input)
 	{
 		fscanf(fp, "%lf", &chr);
 		curr_col++;
-		// printf("curr_col=%d\n",curr_col);
 	}
 
 	int i, j;
 	i = 0;
 	j = 0;
-	// double c;
 	while (i != nrows)
 	{
 		fscanf(fp, "%lf", &chr);
-		// printf("scanning %f\n",chr);
 		if (j % ncols == 0)
 		{
-			*mm = chr;
-			mm++;
+			*ret = chr;
+			ret++;
 			i++;
-			// printf("adding %f\n",chr);
 		}
 		j++;
 	}
-
-	for (i = 0; i < nrows; i++)
-		printf("%f\n", m[i]);
 }
 double *get_row(int ncols, int row, char *input)
 {
