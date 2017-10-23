@@ -7,6 +7,9 @@ double *get_row2(int ncols, int row, char *input);
 void get_col(int nrows, int ncols,int col, char *file, double *ret);
 int get_ncols(char *input);
 int get_nrows(char *input);
+int get_row_from_linear_index(int index, int ncols);
+int get_col_from_linear_index(int index, int ncols);
+int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 int main()
 {
 	char* m1 = "mat1.txt";
@@ -24,7 +27,9 @@ int main()
 	// double* curr_row;
 	double* curr_col=(double*)malloc(sizeof(double)*nrowsA);
 	int i,j,k;
-	
+	int index_tag;
+	int col_from_index;
+	int row_from_index;
 	// printf("nrowsA=%d\tncolsA=%d\n",nrowsA,ncolsA);
 	// printf("nrowsB=%d\tncolsB=%d\n",nrowsB,ncolsB);
 	double **ans=(double**)malloc(sizeof(double*)*nrowsA);	
@@ -39,7 +44,11 @@ int main()
 		for(j=0;j<ncolsB;j++){
 			get_row(ncolsA, i+1, m1, curr_row);
 			get_col(nrowsB,ncolsB,j+1,m2,curr_col);
-
+			index_tag=get_linear_index_from_mIndex(i,j,nrowsA,ncolsB);
+			row_from_index=get_row_from_linear_index(index_tag,ncolsB);
+			col_from_index=get_col_from_linear_index(index_tag,ncolsB);
+			printf("index=%d\n",index_tag);
+			printf("matrix cord=[%d][%d]\n",row_from_index,col_from_index);
 			for(k=0;k<ncolsB+1;k++){
 				ans[i][j]+=curr_row[k]*curr_col[k];
 			}
@@ -216,4 +225,26 @@ void get_row(int ncols, int row, char *input,double *ret)
 		m++;
 	}
 	fclose(fp);
+}
+
+int get_row_from_linear_index(int index, int ncols){
+	int row=0;
+	while(index>=ncols){
+		index-=ncols;
+		row++;
+	}
+	return row;
+}
+
+int get_col_from_linear_index(int index, int ncols){
+	return index%ncols;
+}
+//case 0,3 index+=3=3
+//case 1,0 index=1*4=4
+//case 1,3 index=4, index = 3+4=7
+int get_linear_index_from_mIndex(int row, int col, int nrows, int ncols){
+	int index=0;
+	index+=col;
+	index+=row*ncols;
+	return index;
 }

@@ -85,7 +85,8 @@ int main(int argc, char *argv[])
 					//TODO indicate sub-answers position in C, tags?
 					i++;
 				}
-		
+				int nrows = 3;
+				int ncols = 3;
 			endtime = MPI_Wtime();
 			//print answer
 			for(i=0;i<nrowsA;i++){
