@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "mpi.h"
 #include <stdlib.h>
 #include <time.h>
 #include <sys/times.h>
@@ -10,60 +11,95 @@ int get_nrows(char *input);
 int get_row_from_linear_index(int index, int ncols);
 int get_col_from_linear_index(int index, int ncols);
 int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
-int main()
+
+int main(int argc, char *argv[])
 {
 	char* m1 = "mat1.txt";
 	char* m2 = "mat2.txt";
-	// printf("getting rows\n");
 	int nrowsA=get_nrows(m1);
-	// printf("got nrowsA\n");
 	int nrowsB=get_nrows(m2);
-	// printf("got nrowsB, getting cols\n");
 	int ncolsA=get_ncols(m1);
-	// printf("got ncolsA\n");
 	int ncolsB=get_ncols(m2);
-	// printf("DBG got ncolsB\n");
-	double* curr_row=(double*)malloc(sizeof(double)*ncolsB);
-	// double* curr_row;
-	double* curr_col=(double*)malloc(sizeof(double)*nrowsA);
 	int i,j,k;
-	int index_tag;
+	int myid, numprocs;
+	MPI_Status status;
+	int master=0;
+	double starttime, endtime;
+	int m_tag,s_tag,s2_tag;
 	int col_from_index;
 	int row_from_index;
-	// printf("nrowsA=%d\tncolsA=%d\n",nrowsA,ncolsA);
-	// printf("nrowsB=%d\tncolsB=%d\n",nrowsB,ncolsB);
+	double* s_ans =(double*)malloc(sizeof(double)*ncolsB);
+	double* curr_row=(double*)malloc(sizeof(double)*ncolsB);
+	double* curr_col=(double*)malloc(sizeof(double)*nrowsA);
 	double **ans=(double**)malloc(sizeof(double*)*nrowsA);	
+	double* s_row = (double*)malloc(sizeof(double)*ncolsB);
+	double* s_col=(double*)(malloc(sizeof(double)*nrowsA);
 	for(i=0;i<nrowsA;i++)
 		ans[i]=(double*)malloc(sizeof(double)*ncolsB);
-	// printf("malloced ans\n");
 	for(i=0;i<nrowsA;i++)
 		for(j=0;j<ncolsB;j++)
 			ans[i][j]=0.0;
 
-	for(i=0;i<nrowsA;i++){
-		for(j=0;j<ncolsB;j++){
-			get_row(ncolsA, i+1, m1, curr_row);
-			get_col(nrowsB,ncolsB,j+1,m2,curr_col);
-			index_tag=get_linear_index_from_mIndex(i,j,nrowsA,ncolsB);
-			row_from_index=get_row_from_linear_index(index_tag,ncolsB);
-			col_from_index=get_col_from_linear_index(index_tag,ncolsB);
-			printf("index=%d\n",index_tag);
-			printf("matrix cord=[%d][%d]\n",row_from_index,col_from_index);
-			for(k=0;k<ncolsB+1;k++){
-				ans[i][j]+=curr_row[k]*curr_col[k];
+
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	
+	//master
+	if(myid==0){
+		starttime = MPI_Wtime();
+
+		for(i=0;i<nrowsA;i++){
+			for(j=0;j<ncolsB;j++){
+				get_row(ncolsA, i+1, m1, curr_row);
+				get_col(nrowsB,ncolsB,j+1,m2,curr_col);
+				index_tag=get_linear_index_from_mIndex(i,j,nrowsA,ncolsB);
+				//TODO SEND
+				MPI_Send(&curr_row, ncolsB, MPI_DOUBLE, current_proc, index_tag, MPI_COMM_WORLD);
+				MPI_Send(&curr_col, 1, MPI_DOUBLE, current_proc, index_tag, MPI_COMM_WORLD);
+				//
+				row_from_index=get_row_from_linear_index(index_tag,ncolsB);
+				col_from_index=get_col_from_linear_index(index_tag,ncolsB);
+				MPI_Recv(ans
 			}
 		}
-	}
 
-	// printf("main loops done\n");
 
-	for(i=0;i<nrowsA;i++){
+		for(i=0;i<nrowsA;i++){
+			printf("\n");
+			for(j=0;j<ncolsB;j++)
+				printf(" %f",ans[i][j]);
+		}
 		printf("\n");
-		for(j=0;j<ncolsB;j++)
-			printf(" %f",ans[i][j]);
+		endtime = MPI_Wtime();
 	}
-	printf("\n");
-}
+//slave
+	else{
+		//TODO recv
+		while(1){
+			MPI_Recv(&s_row, ncolsA, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			if(status.MPI_TAG==0)
+				break;
+			s_tag=status.MPI_TAG;
+			MPI_Recv(&s_col, nrowsB, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,MPI_COMM_WORLD, &status);
+			if(status.MPI_TAG==0)
+				break;
+			s2_tag=status.MPI_TAG;
+			if(s_tag!=s2_tasg){
+				printf("Reciever tags not equal, ERROR\n");
+				return -1;
+			}
+			
+			for(k=0;k<ncolsB+1;k++)
+				s_ans+=curr_row[k]*curr_col[k];
+			//TODO SEND
+			//
+			MPI_Send(ans,ncolsA,MPI_DOUBLE,master,s_tag,MPI_COMM_WORLD);
+		}			
+	}
+	MPI_Finalize();
+	return 0;
+}//end main
 int get_nrows(char *input)
 {
 	FILE *fp;
