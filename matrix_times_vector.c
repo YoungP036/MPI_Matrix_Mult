@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
 					for (j = 0; j < ncols; j++)
 					{
 						ans += buffer[j] * b[j];
+						printf("%d i=%f\n",myid,ans);
 					}
 					MPI_Send(&ans, 1, MPI_DOUBLE, master, row, MPI_COMM_WORLD);
 				}
