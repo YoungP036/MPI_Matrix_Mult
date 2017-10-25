@@ -28,12 +28,13 @@ int main(int argc, char *argv[])
 	int m_tag,s_tag,s2_tag;
 	int col_from_index;
 	int row_from_index;
-	double* s_ans =(double*)malloc(sizeof(double)*ncolsB);
+	int current_proc;
+	double* s_ans =(double*)malloc(sizeof(double));
 	double* curr_row=(double*)malloc(sizeof(double)*ncolsB);
 	double* curr_col=(double*)malloc(sizeof(double)*nrowsA);
 	double **ans=(double**)malloc(sizeof(double*)*nrowsA);	
 	double* s_row = (double*)malloc(sizeof(double)*ncolsB);
-	double* s_col=(double*)(malloc(sizeof(double)*nrowsA);
+	double* s_col=(double*)malloc(sizeof(double)*nrowsA);
 	for(i=0;i<nrowsA;i++)
 		ans[i]=(double*)malloc(sizeof(double)*ncolsB);
 	for(i=0;i<nrowsA;i++)
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-	
+	current_proc=0;
 	//master
 	if(myid==0){
 		starttime = MPI_Wtime();
@@ -53,18 +54,21 @@ int main(int argc, char *argv[])
 			for(j=0;j<ncolsB;j++){
 				get_row(ncolsA, i+1, m1, curr_row);
 				get_col(nrowsB,ncolsB,j+1,m2,curr_col);
-				index_tag=get_linear_index_from_mIndex(i,j,nrowsA,ncolsB);
+				m_tag=get_linear_index_from_mIndex(i,j,nrowsA,ncolsB);
 				//TODO SEND
-				MPI_Send(&curr_row, ncolsB, MPI_DOUBLE, current_proc, index_tag, MPI_COMM_WORLD);
-				MPI_Send(&curr_col, 1, MPI_DOUBLE, current_proc, index_tag, MPI_COMM_WORLD);
+				MPI_Send(&curr_row, ncolsB, MPI_DOUBLE, current_proc, m_tag, MPI_COMM_WORLD);
+				MPI_Send(&curr_col, 1, MPI_DOUBLE, current_proc, m_tag, MPI_COMM_WORLD);
 				//
-				row_from_index=get_row_from_linear_index(index_tag,ncolsB);
-				col_from_index=get_col_from_linear_index(index_tag,ncolsB);
-				MPI_Recv(ans
+				//TODO recv
+				//get row/col from tag
+				//set ans accordingl
+				//reset if we're at final proc
+				current_proc= (current_proc==numprocs) ? 0 : current_proc+1;
 			}
 		}
 
 
+		//print final answer
 		for(i=0;i<nrowsA;i++){
 			printf("\n");
 			for(j=0;j<ncolsB;j++)
@@ -85,15 +89,14 @@ int main(int argc, char *argv[])
 			if(status.MPI_TAG==0)
 				break;
 			s2_tag=status.MPI_TAG;
-			if(s_tag!=s2_tasg){
+			if(s_tag!=s2_tag){
 				printf("Reciever tags not equal, ERROR\n");
 				return -1;
 			}
 			
 			for(k=0;k<ncolsB+1;k++)
-				s_ans+=curr_row[k]*curr_col[k];
-			//TODO SEND
-			//
+				*s_ans+=curr_row[k]*curr_col[k];
+			//SEND to master
 			MPI_Send(ans,ncolsA,MPI_DOUBLE,master,s_tag,MPI_COMM_WORLD);
 		}			
 	}
@@ -236,13 +239,6 @@ void get_row(int ncols, int row, char *input,double *ret)
 	}
 	
 	double *m=ret;
-	// m = malloc(sizeof(double) * ncols);
-	// double *mm = m;
-
-	// if (m == NULL)
-	// {
-	// 	return -1;
-	// }
 
 	double c;
 	int r = 1;
