@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/times.h>
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 void get_row(int ncols, int row, char *input,double *ret);
 double *get_row2(int ncols, int row, char *input);
 void get_col(int nrows, int ncols,int col, char *file, double *ret);
@@ -12,8 +14,7 @@ int get_row_from_linear_index(int index, int ncols);
 int get_col_from_linear_index(int index, int ncols);
 int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
 	char* m1 = "mat1.txt";
 	char* m2 = "mat2.txt";
 	int nrowsA=get_nrows(m1);
@@ -25,25 +26,23 @@ int main(int argc, char *argv[])
 	MPI_Status status;
 	int master=0;
 	double starttime, endtime;
-	int m_tag,s_tag,s2_tag;
-	int col_from_index,row_from_index;
 	int ans_row_index, sender_proc;
-	int current_proc;
+	int current_proc, numsent;
 
 	double* curr_row=(double*)malloc(sizeof(double)*ncolsB);
 	double* curr_col=(double*)malloc(sizeof(double)*nrowsA);
 	double* s_row = (double*)malloc(sizeof(double)*ncolsB);
 	double* s_col=(double*)malloc(sizeof(double)*nrowsA);
 	double **final_ans=(double**)malloc(sizeof(double*)*nrowsA);
-	double *ans=(double*)malloc(sizeof(double)*nrowsA);
 	for(i=0;i<nrowsA;i++)
-		ans[i]=(double*)malloc(sizeof(double)*ncolsB);
+		final_ans[i]=(double*)malloc(sizeof(double)*ncolsB);
 	for(i=0;i<nrowsA;i++)
 		for(j=0;j<ncolsB;j++)
-			ans[i][j]=0.0;
+			final_ans[i][j]=0.0;
 	double* s_ans =(double*)malloc(sizeof(double)*nrowsA);
+	double* ans =(double*)malloc(sizeof(double)*nrowsA);
 		for(i=0;i<nrowsA;i++)
-			s_ans=0.0;
+			s_ans[i]=0.0;
 	
 	//capture matrix 2
 	double **matB=(double**)malloc(sizeof(double*)*nrowsB);
@@ -56,6 +55,7 @@ int main(int argc, char *argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 	current_proc=0;
+	numsent=0;
 	//master
 	if(myid==0){
 		starttime = MPI_Wtime();
@@ -75,25 +75,24 @@ int main(int argc, char *argv[])
 			final_ans[ans_row_index]=ans;
 			if(numsent<nrowsA){
 				get_row(ncolsA,numsent+1,m1,curr_row);
-				MPI_Send(curr_row,ncolsA,MPI_DOUBLE,sender,numsent+1,MPI_COMM_WORLD);
+				MPI_Send(curr_row,ncolsA,MPI_DOUBLE,sender_proc,numsent+1,MPI_COMM_WORLD);
 				numsent++;
 			}
 			else
-				MPI_SEND(MPI_BOTTOM,0,MPI_DOUBLE,sender,0,MPI_COMM_WORLD);
-			
+				MPI_Send(MPI_BOTTOM,0,MPI_DOUBLE,sender_proc,0,MPI_COMM_WORLD);
 		}
-		endtime=MPI_wtime();
-		printf("%f\n",(endtime-starttime));
 
+		endtime=MPI_Wtime();
+		printf("%f\n",(endtime-starttime));
 		//print final answer
 		for(i=0;i<nrowsA;i++){
 			printf("\n");
 			for(j=0;j<ncolsB;j++)
-				printf(" %f",ans[i][j]);
+				printf(" %f",final_ans[i][j]);
 		}
 		printf("\n");
 		endtime = MPI_Wtime();
-	}
+	}//end master
 //slave
 	else{
 		if(myid<nrowsA){		
@@ -103,14 +102,17 @@ int main(int argc, char *argv[])
 				if(status.MPI_TAG==0)
 					break;
 				int i;
+				//for each answer we need, use that row
 				for(i=0;i<ncolsA;i++)
-					for(k=0;k<ncolsB+1;k++)
-						s_ans[i]+=curr_row[k]*curr_col[k];
+					//use a col in B and multiply them
+					for(k=0;k<nrowsB;j++)
+						s_ans[i]+=curr_row[k]*matB[k][i];
+					
 				//SEND to master
-				MPI_Send(ans,ncolsA,MPI_DOUBLE,master,status.MPI_TAG,MPI_COMM_WORLD);
-			}
-		}			
-	}
+				MPI_Send(s_ans,ncolsA,MPI_DOUBLE,master,status.MPI_TAG,MPI_COMM_WORLD);
+			}//end inf while
+		}//end proc activate			
+	}//end slave
 	MPI_Finalize();
 	return 0;
 }//end main
@@ -231,8 +233,7 @@ void get_row(int ncols, int row, char *input,double *ret)
 	//file setup
 	FILE *fp;
 	fp = fopen(input, "r");
-	if (fp == NULL)
-	{
+	if (fp == NULL){
 		printf("No File Found");
 		return -1;
 	}
@@ -243,7 +244,7 @@ void get_row(int ncols, int row, char *input,double *ret)
 	int i;
 	
 	//iterate to correct row
-	while (r != row){
+	while (r != row)
 		if ((c = fgetc(fp)) == '\n')
 			r++;
 
