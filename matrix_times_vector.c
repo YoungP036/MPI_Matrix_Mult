@@ -13,8 +13,8 @@ int get_col_from_linear_index(int index, int ncols);
 int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 int main(int argc, char *argv[])
 {
-	int nrows, ncols;
-	double *aa, *b, *c;
+	int nrowsA,nrowsB, ncolsA,ncolsB;
+	double *aa,*b, *c;
 	double *buffer, ans;
 	double *times;
 	double total_times;
@@ -29,25 +29,31 @@ int main(int argc, char *argv[])
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-	if (argc > 1)
+	if (argc > 4)
 	{
-		nrows = atoi(argv[1]);
-		ncols = nrows;
-		aa = (double *)malloc(sizeof(double) * nrows * ncols);
-		b = (double *)malloc(sizeof(double) * ncols);
+		nrowsA = atoi(argv[1]);
+		ncolsA = atoi(argv[2]);
+		nrowsB=atoi(argv[3]);
+		ncolsB=atoi(argv[4]);
+
+		if(ncolsA!=nrowsB){
+			printf("Dimension mismatch\n");
+			return -1;
+		}
+		aa = (double *)malloc(sizeof(double) * nrowsA * ncolsA);
+		b = (double *)malloc(sizeof(double) * nrowsB* ncolsB);
 		c = (double *)malloc(sizeof(double) * nrows);
 		buffer = (double *)malloc(sizeof(double) * ncols);
 		master = 0;
 		if (myid == master)
 		{
 			// Master Code goes here
-			for (i = 0; i < nrows; i++)
-			{
-				for (j = 0; j < ncols; j++)
-				{
-					aa[i * ncols + j] = (double)rand() / RAND_MAX;
-				}
-			}
+			for (i = 0; i < nrowsA; i++)
+				for (j = 0; j < ncolsA; j++)
+					aa[i * ncolsA + j] = (double)rand() / RAND_MAX;
+			for(i=0;i<nrowsB;i++)
+				for(j=0;j<ncolsB;j++)
+				b[i+ncolsB+j]=(double)rand()/ RAND_MAX;
 
 			starttime = MPI_Wtime();
 			numsent = 0;
@@ -56,9 +62,9 @@ int main(int argc, char *argv[])
 			{
 				for (j = 0; j < ncols; j++)
 				{
-					buffer[j] = aa[i * ncols + j];
+					buffer[j] = aa[i * ncolsA + j];
 				}
-				MPI_Send(buffer, ncols, MPI_DOUBLE, i + 1, i + 1, MPI_COMM_WORLD);
+				MPI_Send(buffer, ncolsA, MPI_DOUBLE, i + 1, i + 1, MPI_COMM_WORLD);
 				numsent++;
 			}
 			for (i = 0; i < nrows; i++)
@@ -68,13 +74,13 @@ int main(int argc, char *argv[])
 				sender = status.MPI_SOURCE;
 				anstype = status.MPI_TAG;
 				c[anstype - 1] = ans;
-				if (numsent < nrows)
+				if (numsent < nrowsA)
 				{
-					for (j = 0; j < ncols; j++)
+					for (j = 0; j < ncolsA; j++)
 					{
-						buffer[j] = aa[numsent * ncols + j];
+						buffer[j] = aa[numsent * ncolsA + j];
 					}
-					MPI_Send(buffer, ncols, MPI_DOUBLE, sender, numsent + 1,
+					MPI_Send(buffer, ncolsA, MPI_DOUBLE, sender, numsent + 1,
 							 MPI_COMM_WORLD);
 					numsent++;
 				}
@@ -91,12 +97,12 @@ int main(int argc, char *argv[])
 		else
 		{
 			// Slave Code goes here
-			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
-			if (myid <= nrows)
+			MPI_Bcast(b, ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			if (myid <= nrowsA)
 			{
 				while (1)
 				{
-					MPI_Recv(buffer, ncols, MPI_DOUBLE, master, MPI_ANY_TAG,
+					MPI_Recv(buffer, ncolsA, MPI_DOUBLE, master, MPI_ANY_TAG,
 							 MPI_COMM_WORLD, &status);
 					if (status.MPI_TAG == 0)
 					{
@@ -107,7 +113,7 @@ int main(int argc, char *argv[])
 					for (j = 0; j < ncols; j++)
 					{
 						ans += buffer[j] * b[j];
-						printf("%d i=%f\n",myid,ans);
+						printf("id=%d, buf=%f, b=%f, i=%f\n",myid,buffer[j],b[j],ans);
 					}
 					MPI_Send(&ans, 1, MPI_DOUBLE, master, row, MPI_COMM_WORLD);
 				}
@@ -116,7 +122,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		fprintf(stderr, "Usage matrix_times_vector <size>\n");
+		fprintf(stderr, "Enter dimension params, rowsA, colsA, rowsB, colsB\n");
 	}
 	MPI_Finalize();
 	return 0;
