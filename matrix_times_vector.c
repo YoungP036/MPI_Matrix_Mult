@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
 				}
 			}
 			endtime = MPI_Wtime();
+			for(i=0;i<nrows;i++)
+				printf("%f\n",c[i]);
 			printf("%f\n", (endtime - starttime));
 		}
 		else
