@@ -168,8 +168,8 @@ int get_ncols(char *input)
 
 void get_col(int nrows, int ncols,int col, char *file, double *ret)
 {
+	//file setup
 	FILE *fp = fopen(file, "r");
-
 	if (fp == NULL)
 	{
 		printf("file not found\n");
@@ -203,45 +203,39 @@ void get_col(int nrows, int ncols,int col, char *file, double *ret)
 }
 double *get_row(int ncols, int row, char *input)
 {
+	//file setup
 	FILE *fp;
-	double *m;
-
-	m = malloc(sizeof(double) * ncols);
-	double *mm = m;
-
-	if (m == NULL)
-	{
-		return -1;
-	}
-
-	double c;
-	int r = 1;
-
 	fp = fopen(input, "r");
-
-	if (fp == NULL)
-	{
+	if (fp == NULL){
 		printf("No File Found");
 		return -1;
 	}
-	else
-	{
-		while (r != row)
-		{
-			if ((c = fgetc(fp)) == '\n')
-			{
-				r++;
-			}
-		}
 
-		int i;
-		for (i = 0; i < ncols; i++)
-		{
-			fscanf(fp, "%lf", &c);
-			*mm = c;
-			mm++;
-		}
+	//heap setup
+	double *m;
+	m = malloc(sizeof(double) * ncols);
+	double *mm = m;
+	if (m == NULL)	
+		return -1;	
+
+	//stack setup
+	double c;
+	int r = 1;
+	int i;
+
+	//get to the right row
+	while (r != row)
+		if ((c = fgetc(fp)) == '\n')
+			r++;
+	
+	//capture row
+	for (i = 0; i < ncols; i++)
+	{
+		fscanf(fp, "%lf", &c);
+		*mm = c;
+		mm++;
 	}
+	
 
 	fclose(fp);
 

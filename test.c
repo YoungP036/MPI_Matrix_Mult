@@ -4,22 +4,19 @@
 int get_col_from_index(int nRow, int nCol, int i);
 int get_row_from_index(int nRow, int nCol, int i);
 int main(){
-	int r=2;
-	int c=3;
-	int i=5;
-	int i2=4;
-	printf("index %d maps to row=%d\n",0,get_row_from_index(r,c,0));
-	printf("index %d maps to col=%d\n",0,get_col_from_index(r,c,0));
-	printf("index %d maps to row=%d\n",1,get_row_from_index(r,c,1));
-	printf("index %d maps to col=%d\n",1,get_col_from_index(r,c,1));
-	printf("index %d maps to row=%d\n",2,get_row_from_index(r,c,2));
-	printf("index %d maps to col=%d\n",2,get_col_from_index(r,c,2));
-	printf("index %d maps to row=%d\n",3,get_row_from_index(r,c,3));
-	printf("index %d maps to col=%d\n",3,get_col_from_index(r,c,3));
-	printf("index %d maps to row=%d\n",4,get_row_from_index(r,c,4));
-	printf("index %d maps to col=%d\n",4,get_col_from_index(r,c,4));
-	printf("index %d maps to row=%d\n",5,get_row_from_index(r,c,5));
-	printf("index %d maps to col=%d\n",5,get_col_from_index(r,c,5));
+	int i,j;
+	double **ans=(double**)malloc(sizeof(double*)*3);	
+	double *ans2;
+	for(i=0;i<3;i++)
+		ans[i]=(double*)malloc(sizeof(double)*3);
+	ans2=&ans[0][0];
+	for(i=0;i<3;i++)
+		for(j=0;j<3;j++)
+			*ans2[i][j]=(double)i;
+
+	for(i=0;i<3;i++)
+		for(j=0;j<3;j++)
+			printf("%f\n",*ans2[i][j]);
 
 }
 
