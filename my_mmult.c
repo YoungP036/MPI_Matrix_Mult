@@ -15,6 +15,7 @@ int get_col_from_linear_index(int index, int ncols);
 int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 
 int main(int argc, char *argv[]){
+	FILE* fp;
 	char* m1 = "mat1.txt";
 	char* m2 = "mat2.txt";
 	int nrowsA=get_nrows(m1);
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]){
 	int myid, numprocs;
 	MPI_Status status;
 	int master=0;
-	double starttime, endtime;
+	double starttime, endtime,val;
 	int ans_row_index, sender_proc;
 	int current_proc, numsent;
 
@@ -43,14 +44,8 @@ int main(int argc, char *argv[]){
 	double* ans =(double*)malloc(sizeof(double)*nrowsA);
 		for(i=0;i<nrowsA;i++)
 			s_ans[i]=0.0;
-	
-	//capture matrix 2
-	double **matB=(double**)malloc(sizeof(double*)*nrowsB);
-	for(i=0;i<nrowsB;i++)
-		matB=(double*)malloc(sizeof(double)*ncolsB);
-	for(i=0;i<nrowsB;i++)
-		get_row(ncolsB,i+1,m2,matB[i]);
-
+	double *matB=(double*)malloc(sizeof(double*)*nrowsB*ncolsB);
+			
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -59,7 +54,21 @@ int main(int argc, char *argv[]){
 	//master
 	if(myid==0){
 		starttime = MPI_Wtime();
-		MPI_Bcast(&matB[0][0], nrowsA*ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			//capture matrix 2
+		fp=fopen(m2,"r+");
+		if(fp==NULL){
+			printf("mat2.txt not found\n");
+			return -1;
+		}
+    	for (i = 0; i < nrowsB; i++)
+			for (j = 0; j < ncolsB; j++)
+			{
+				fscanf(fp, "%lf", &val);
+				matB[get_linear_index_from_mIndex(i, j, nrowsB, ncolsB)] = val;
+				// printf("[%d][%d]=%f @ linear index %d\n",i,j,matB[get_linear_index_from_mIndex(i,j,nrowsB,ncolsB)],get_linear_index_from_mIndex(i,j,nrowsB,ncolsB));
+			}
+		
+			MPI_Bcast(matB, nrowsA*ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
 		//send the first numprocs number of rows
 		for(i=0;i<min(numprocs-1,nrowsA);i++){
 			for(j=0;j<nrowsA;j++)
@@ -96,17 +105,14 @@ int main(int argc, char *argv[]){
 //slave
 	else{
 		if(myid<nrowsA){		
-			MPI_Bcast(&matB[0][0], nrowsA*ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			MPI_Bcast(matB, nrowsA*ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
 			while(1){
-				MPI_Recv(&curr_row, ncolsB, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+				MPI_Recv(&curr_row, ncolsA, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 				if(status.MPI_TAG==0)
 					break;
 				int i;
-				//for each answer we need, use that row
-				for(i=0;i<ncolsA;i++)
-					//use a col in B and multiply them
-					for(k=0;k<nrowsB;j++)
-						s_ans[i]+=curr_row[k]*matB[k][i];
+				
+				//TODO compute one row of final answer and send back
 					
 				//SEND to master
 				MPI_Send(s_ans,ncolsA,MPI_DOUBLE,master,status.MPI_TAG,MPI_COMM_WORLD);

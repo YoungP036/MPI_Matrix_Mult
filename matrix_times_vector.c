@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
 		}
 		aa = (double *)malloc(sizeof(double) * nrowsA * ncolsA);
 		b = (double *)malloc(sizeof(double) * nrowsB* ncolsB);
-		c = (double *)malloc(sizeof(double) * nrows);
-		buffer = (double *)malloc(sizeof(double) * ncols);
+		c = (double *)malloc(sizeof(double) * nrowsA);
+		buffer = (double *)malloc(sizeof(double) * ncolsA);
 		master = 0;
 		if (myid == master)
 		{
@@ -57,17 +57,17 @@ int main(int argc, char *argv[])
 
 			starttime = MPI_Wtime();
 			numsent = 0;
-			MPI_Bcast(b, ncols, MPI_DOUBLE, master, MPI_COMM_WORLD);
-			for (i = 0; i < min(numprocs - 1, nrows); i++)
+			MPI_Bcast(b, nrowsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
+			for (i = 0; i < min(numprocs - 1, nrowsA); i++)
 			{
-				for (j = 0; j < ncols; j++)
+				for (j = 0; j < ncolsA; j++)
 				{
 					buffer[j] = aa[i * ncolsA + j];
 				}
 				MPI_Send(buffer, ncolsA, MPI_DOUBLE, i + 1, i + 1, MPI_COMM_WORLD);
 				numsent++;
 			}
-			for (i = 0; i < nrows; i++)
+			for (i = 0; i < nrowsA; i++)
 			{
 				MPI_Recv(&ans, 1, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG,
 						 MPI_COMM_WORLD, &status);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			endtime = MPI_Wtime();
-			for(i=0;i<nrows;i++)
+			for(i=0;i<nrowsB;i++)
 				printf("%f\n",c[i]);
 			printf("%f\n", (endtime - starttime));
 		}
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 					}
 					row = status.MPI_TAG;
 					ans = 0.0;
-					for (j = 0; j < ncols; j++)
+					for (j = 0; j < ncolsA; j++)
 					{
 						ans += buffer[j] * b[j];
 						printf("id=%d, buf=%f, b=%f, i=%f\n",myid,buffer[j],b[j],ans);
