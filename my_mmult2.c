@@ -22,6 +22,9 @@ int main(int argc, char *argv[]){
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 	int nrowsA, ncolsA, nrowsB, ncolsB;
 	int source,dest,i,j;
+	double **matA;
+	double **matB;
+	double *ret_row;
 	//master
 	if(myid==0){
 		starttime = MPI_Wtime();
@@ -31,7 +34,29 @@ int main(int argc, char *argv[]){
 		ncolsA=get_ncols(m1);
 		nrowsB=get_nrows(m2);
 		ncolsB=get_ncols(m2);
-
+		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		matA=(double**)malloc(sizeof(double*)*nrowsA);
+		matB=(double**)malloc(sizeof(double*)*nrowsB);
+		for(i=0;i<nrowsA;i++)
+			matA[i]=(double*)malloc(sizeof(double)*ncolsA);
+		for(i=0;i<nrowsB;i++)
+			matB[i]=(double*)malloc(sizeof(double)*ncolsB);
+		for(i=0;i<nrowsA;i++)
+			get_row(ncolsA,i,m1,matA[i]);
+		for(i=0;i<nrowsB;i++)
+			get_row(ncolsB,i,m2,matB[i]);
+		
+		for(i=0;i<nrowsA;i++){
+			printf("\n");
+			for(j=0;j<ncolsA;j++)
+				printf(" %lf",matA[i][j]);
+		}
+		
+		for(i=0;i<nrowsB;i++){
+			printf("\n");
+			for(j=0;j<ncolsB;j++)
+				printf(" %lf",matB[i][j]);
+		}
 		for(dest=1;dest<numprocs;dest++){
 			MPI_Send(&nrowsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&ncolsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
@@ -41,6 +66,10 @@ int main(int argc, char *argv[]){
 		
 		
 		endtime = MPI_Wtime();		
+
+		free(matB);
+		free(matA);
+		free(ret_row);
 	}
 	//slave
 	else{
@@ -50,6 +79,14 @@ int main(int argc, char *argv[]){
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("P%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
+		matB=(double**)malloc(sizeof(double*)*nrowsB);
+		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		for(i=0;i<nrowsB;i++)
+			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
+
+		free(matB);
+		free(matA);
+		free(ret_row);
 	}
 
 	MPI_Finalize();
