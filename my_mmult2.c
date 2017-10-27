@@ -25,6 +25,8 @@ int main(int argc, char *argv[]){
 	double **matA;
 	double **matB;
 	double *ret_row;
+	double *curr_rowA;
+	double *curr_rowB;
 	//master
 	if(myid==0){
 		starttime = MPI_Wtime();
@@ -35,6 +37,8 @@ int main(int argc, char *argv[]){
 		nrowsB=get_nrows(m2);
 		ncolsB=get_ncols(m2);
 		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		curr_rowA=(double*)malloc(sizeof(double)*ncolsA);
+		curr_rowB=(double*)malloc(sizeof(double)*ncolsB);
 		matA=(double**)malloc(sizeof(double*)*nrowsA);
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
 		for(i=0;i<nrowsA;i++)
@@ -42,11 +46,15 @@ int main(int argc, char *argv[]){
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double)*ncolsB);
 		printf("master done malloc\n");
-		for(i=0;i<nrowsA;i++)
-			get_row(ncolsA,i,m1,matA[i]);
+		for(i=0;i<nrowsA;i++){
+			get_row(ncolsA,i+1,m1,matA[i]);
+			//printf("matA row %d gotten\n",i);
+		}
 		printf("master got matA\n");
-		for(i=0;i<nrowsB;i++)
-			get_row(ncolsB,i,m2,matB[i]);
+		for(i=0;i<nrowsB;i++){
+			get_row(ncolsB,i+1,m2,matB[i]);
+			//printf("matB row %d gotten\n",i);
+		}
 			printf("master got matB\n");
 			
 		for(i=0;i<nrowsA;i++){
@@ -171,6 +179,7 @@ void get_col(int nrows, int ncols,int col, char *file, double *ret)
 
 void get_row(int ncols, int row, char *input,double *ret)
 {
+//	printf("in get row\n");
 	//file setup
 	FILE *fp;
 	fp = fopen(input, "r");
@@ -185,13 +194,15 @@ void get_row(int ncols, int row, char *input,double *ret)
 	int i;
 	
 	//iterate to correct row
-	while (r != row)
+	while (r != row){
+//		printf("in get row  search iterator\n");
 		if ((c = fgetc(fp)) == '\n')
 			r++;
-
+	}
 	//capture row
 	for (i = 0; i < ncols; i++)
 	{
+//		printf("capturing row\n");
 		fscanf(fp, "%lf", &c);
 		*m = c;
 		m++;
