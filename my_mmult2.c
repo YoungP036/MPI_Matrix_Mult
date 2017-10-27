@@ -49,18 +49,7 @@ int main(int argc, char *argv[]){
 			get_row(ncolsA,i+1,m1,matA[i]);
 		for(i=0;i<nrowsB;i++)
 			get_row(ncolsB,i+1,m2,matB[i]);
-			
-		// for(i=0;i<nrowsA;i++){
-			// printf("\n");
-			// for(j=0;j<ncolsA;j++)
-				// printf(" %lf",matA[i][j]);
-		// }
-		
-		// for(i=0;i<nrowsB;i++){
-			// printf("\n");
-			// for(j=0;j<ncolsB;j++)
-				// printf(" %lf",matB[i][j]);
-		// }
+
 		for(dest=1;dest<numprocs;dest++){
 			MPI_Send(&nrowsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&ncolsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
@@ -71,7 +60,15 @@ int main(int argc, char *argv[]){
 			printf("master bcast %d\n",i);
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
-		
+
+		dest=1;
+		for(i=0;i<nrowsA;i++){
+			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i,MPI_COMM_WORLD);
+			if(dest==numprocs)
+				dest==1;
+			else
+				dest++;
+		}
 		endtime = MPI_Wtime();		
 	}
 	//slave
@@ -82,6 +79,7 @@ int main(int argc, char *argv[]){
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("\nP%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
+		curr_rowA=(double*)malloc(sizeof
 		ret_row=(double*)malloc(sizeof(double)*nrowsA);
 //		printf("ret_row malooc\n");
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
@@ -94,6 +92,12 @@ int main(int argc, char *argv[]){
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 
+		while(1){
+			
+
+			if(status.MPI_TAG==0)
+				break;
+		}
 //		for(i=0;i<nrowsB;i++)
 //			for(j=0;j<ncolsB;j++)
 //				printf("P%d: [%d][%d]=\n",myid,i,j);
