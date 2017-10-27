@@ -66,7 +66,6 @@ int main(int argc, char *argv[]){
 		
 		
 		endtime = MPI_Wtime();		
-
 		free(matB);
 		free(matA);
 		free(ret_row);
@@ -79,14 +78,14 @@ int main(int argc, char *argv[]){
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("P%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
-		matB=(double**)malloc(sizeof(double*)*nrowsB);
-		ret_row=(double*)malloc(sizeof(double)*nrowsA);
-		for(i=0;i<nrowsB;i++)
-			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
+		// matB=(double**)malloc(sizeof(double*)*nrowsB);
+		// ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		// for(i=0;i<nrowsB;i++)
+		// 	matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
 
-		free(matB);
-		free(matA);
-		free(ret_row);
+		// free(matB);
+		// free(matA);
+		// free(ret_row);
 	}
 
 	MPI_Finalize();
