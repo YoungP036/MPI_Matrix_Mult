@@ -41,11 +41,14 @@ int main(int argc, char *argv[]){
 			matA[i]=(double*)malloc(sizeof(double)*ncolsA);
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double)*ncolsB);
+		printf("master done malloc\n");
 		for(i=0;i<nrowsA;i++)
 			get_row(ncolsA,i,m1,matA[i]);
+		printf("master got matA\n");
 		for(i=0;i<nrowsB;i++)
 			get_row(ncolsB,i,m2,matB[i]);
-		
+			printf("master got matB\n");
+			
 		for(i=0;i<nrowsA;i++){
 			printf("\n");
 			for(j=0;j<ncolsA;j++)
@@ -66,9 +69,9 @@ int main(int argc, char *argv[]){
 		
 		
 		endtime = MPI_Wtime();		
-		free(matB);
-		free(matA);
-		free(ret_row);
+		// free(matB);
+		// free(matA);
+		// free(ret_row);
 	}
 	//slave
 	else{
