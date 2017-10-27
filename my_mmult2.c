@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
 		}
 		for(i=0;i<nrowsB;i++){
 			printf("master bcast %d\n",i);
-			MPI_Bcast(&matB[i], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 		
 		endtime = MPI_Wtime();		
@@ -82,22 +82,24 @@ int main(int argc, char *argv[]){
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("\nP%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
-		printf("TEST\n");
 		ret_row=(double*)malloc(sizeof(double)*nrowsA);
-		printf("ret_row malooc\n");
+//		printf("ret_row malooc\n");
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
-		printf("slave done single malloc\n");
+//		printf("slave done single malloc\n");
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
-		printf("slave done malloc loop\n");
+//		printf("slave done malloc loop\n");
 		for(i=0;i<nrowsB;i++){
 			printf("slave %d bcast\n",myid);
-			MPI_Bcast(&matB[i], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 
-		for(i=0;i<nrowsB;i++)
-			for(j=0;j<ncolsB;j++)
-				printf("P%d: [%d][%d]=%f\n",myid,i,j,matB[i][j]);
+//		for(i=0;i<nrowsB;i++)
+//			for(j=0;j<ncolsB;j++)
+//				printf("P%d: [%d][%d]=\n",myid,i,j);
+//				printf("P%d: [%d][%d]=%f\n",myid,i,j,matB[i][j]);
+
+
 		printf("slave end\n");
 	}
 
