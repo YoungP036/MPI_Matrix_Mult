@@ -45,41 +45,32 @@ int main(int argc, char *argv[]){
 			matA[i]=(double*)malloc(sizeof(double)*ncolsA);
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double)*ncolsB);
-		printf("master done malloc\n");
-		for(i=0;i<nrowsA;i++){
+		for(i=0;i<nrowsA;i++)
 			get_row(ncolsA,i+1,m1,matA[i]);
-			//printf("matA row %d gotten\n",i);
-		}
-		printf("master got matA\n");
-		for(i=0;i<nrowsB;i++){
+		for(i=0;i<nrowsB;i++)
 			get_row(ncolsB,i+1,m2,matB[i]);
-			//printf("matB row %d gotten\n",i);
-		}
-			printf("master got matB\n");
 			
-		for(i=0;i<nrowsA;i++){
-			printf("\n");
-			for(j=0;j<ncolsA;j++)
-				printf(" %lf",matA[i][j]);
-		}
+		// for(i=0;i<nrowsA;i++){
+			// printf("\n");
+			// for(j=0;j<ncolsA;j++)
+				// printf(" %lf",matA[i][j]);
+		// }
 		
-		for(i=0;i<nrowsB;i++){
-			printf("\n");
-			for(j=0;j<ncolsB;j++)
-				printf(" %lf",matB[i][j]);
-		}
+		// for(i=0;i<nrowsB;i++){
+			// printf("\n");
+			// for(j=0;j<ncolsB;j++)
+				// printf(" %lf",matB[i][j]);
+		// }
 		for(dest=1;dest<numprocs;dest++){
 			MPI_Send(&nrowsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&ncolsA,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&nrowsB,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&ncolsB,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 		}
-		
+		for(i=0;i<nrowsB;i++)
+			MPI_Bcast(&matB[i], ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
 		
 		endtime = MPI_Wtime();		
-		// free(matB);
-		// free(matA);
-		// free(ret_row);
 	}
 	//slave
 	else{
@@ -89,14 +80,15 @@ int main(int argc, char *argv[]){
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("P%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
-		// matB=(double**)malloc(sizeof(double*)*nrowsB);
-		// ret_row=(double*)malloc(sizeof(double)*nrowsA);
-		// for(i=0;i<nrowsB;i++)
-		// 	matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
-
-		// free(matB);
-		// free(matA);
-		// free(ret_row);
+		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		matB=(double**)malloc(sizeof(double*)*nrowsB);
+		for(i=0;i<nrowsB;i++)
+			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
+		for(i=0;i<nrowsB;i++)
+			MPI_Bcast(&matB[i], ncolsB, MPI_DOUBLE, master, MPI_COMM_WORLD);
+		for(i=0;i<nrowsB;i++)
+			for(j=0;j<ncolsB;j++)
+				printf("[%d][%d]=%f\n",i,j,matB[i][j]);
 	}
 
 	MPI_Finalize();
