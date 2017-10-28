@@ -6,20 +6,17 @@
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
 void get_row(int ncols, int row, char *input,double *ret);
-void get_col(int nrows, int ncols,int col, char *file, double *ret);
+// void get_col(int nrows, int ncols,int col, char *file, double *ret);
 int get_ncols(char *input);
 int get_nrows(char *input);
-int get_row_from_linear_index(int index, int ncols);
-int get_col_from_linear_index(int index, int ncols);
-int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
+// int get_row_from_linear_index(int index, int ncols);
+// int get_col_from_linear_index(int index, int ncols);
+// int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 
 int main(int argc, char *argv[]){
 	double starttime, endtime;
 	MPI_Status status;
 	int myid, numprocs;
-	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 	int nrowsA, ncolsA, nrowsB, ncolsB;
 	int source,dest,i,j;
 	double **matA;
@@ -27,6 +24,10 @@ int main(int argc, char *argv[]){
 	double *ret_row;
 	double *curr_rowA;
 	double *curr_rowB;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
 	//master
 	if(myid==0){
 		printf("MASTER ID = %d\n",myid);
@@ -63,9 +64,7 @@ int main(int argc, char *argv[]){
 		}
 ////////////////////////////////////////////////////////////////////////////
 		dest=1;
-		printf("NUMPROCS=%d\n",numprocs);
 		for(i=0;i<nrowsA;i++){
-			printf("sending row %d to process %d\n",i,dest);
 			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i+1,MPI_COMM_WORLD);
 			if(dest==numprocs)
 				dest=1;
@@ -74,7 +73,7 @@ int main(int argc, char *argv[]){
 		}
 
 
-		printf("all rows sent\n");
+		// printf("all rows sent\n");
 		//all rows sent, terminate slaves with sentinal as tag=0
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
@@ -83,57 +82,43 @@ int main(int argc, char *argv[]){
 	//slave
 	else{
 		source=0;
-		int row_num;
+		//get dims
 		MPI_Recv(&nrowsA,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsA,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
-		printf("\nP%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
+		//malloc accordingly
 		curr_rowA=(double*)malloc(sizeof(double)*ncolsA);
 		ret_row=(double*)malloc(sizeof(double)*ncolsB);
-//		printf("ret_row malooc\n");
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
-//		printf("slave done single malloc\n");
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
-//		printf("slave done malloc loop\n");
-		for(i=0;i<nrowsB;i++){
-			printf("slave %d bcast\n",myid);
+		
+		//get matB
+		for(i=0;i<nrowsB;i++)
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		}
-//////////////////////////////////////////////////////
+
 		if(myid<=nrowsA){
 			while(1){
+				//get a row, break if all done
 				MPI_Recv(&curr_rowA[0],ncolsA,MPI_DOUBLE,source,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
-				row_num=(int)status.MPI_TAG-1;
-				printf("P%d recv row %d\n",myid,row_num);
 				if(status.MPI_TAG==0)
 					break;
 
-				for(i=0;i<ncolsA;i++)
-					printf("P%d: [%d][%d]=%f\n",myid, row_num,i,curr_rowA[i]);
-
 				for(i=0;i<ncolsA;i++){
-					printf("P%d: computing [%d][%d]\n",myid, row_num,i);
 					ret_row[i]=0.0;
-					for(j=0;j<nrowsB;j++){
-						printf("P%d: summing for [%d][%d]\n",myid,row_num,j);
+					for(j=0;j<nrowsB;j++)
 						ret_row[i]+=curr_rowA[j]*matB[j][i];
-					}
 				}
-				printf("P%d: summations complete\n",myid);
+				//report slice of answer
+				printf("P%d row %d:",myid,status.MPI_TAG-1);
 				for(i=0;i<ncolsB;i++)
-					printf("P%d row %d: ans[%d]=%f\n",myid,row_num,i,ret_row[i]);
-
-			}
-//		for(i=0;i<nrowsB;i++)
-//			for(j=0;j<ncolsB;j++)
-//				printf("P%d: [%d][%d]=\n",myid,i,j);
-//				printf("P%d: [%d][%d]=%f\n",myid,i,j,matB[i][j]);
-
-		}
+					printf("  %f",ret_row[i]);
+				printf("\n");
+			}//end inf while
+		}//end active slave block
 		printf("slave end\n");
-	}
+	}//end slaves
 
 	MPI_Finalize();
 	return 0;
@@ -176,42 +161,42 @@ int get_ncols(char *input)
 	fclose(fp);
 	return col_count;
 }
-void get_col(int nrows, int ncols,int col, char *file, double *ret)
-{
-	//file setup
-	FILE *fp = fopen(file, "r");
-	if (fp == NULL){
-		printf("file not found\n");
-		return -1;
-	}
+// void get_col(int nrows, int ncols,int col, char *file, double *ret)
+// {
+// 	//file setup
+// 	FILE *fp = fopen(file, "r");
+// 	if (fp == NULL){
+// 		printf("file not found\n");
+// 		return -1;
+// 	}
 
-	double chr;
-	int curr_col = 1;
+// 	double chr;
+// 	int curr_col = 1;
 
-	//iterate to col
-	while (curr_col != col)
-	{
-		// printf("loop iter : %d\n",curr_col);
-		fscanf(fp, "%lf", &chr);
-		curr_col++;
-	}
+// 	//iterate to col
+// 	while (curr_col != col)
+// 	{
+// 		// printf("loop iter : %d\n",curr_col);
+// 		fscanf(fp, "%lf", &chr);
+// 		curr_col++;
+// 	}
 
-	int i, j;
-	i = 0;
-	j = 0;
-	//capture col
-	while (i != nrows)
-	{
-		fscanf(fp, "%lf", &chr);
-		if (j % ncols == 0)
-		{
-			*ret = chr;
-			ret++;
-			i++;
-		}
-		j++;
-	}
-}
+// 	int i, j;
+// 	i = 0;
+// 	j = 0;
+// 	//capture col
+// 	while (i != nrows)
+// 	{
+// 		fscanf(fp, "%lf", &chr);
+// 		if (j % ncols == 0)
+// 		{
+// 			*ret = chr;
+// 			ret++;
+// 			i++;
+// 		}
+// 		j++;
+// 	}
+// }
 
 void get_row(int ncols, int row, char *input,double *ret)
 {
@@ -246,22 +231,22 @@ void get_row(int ncols, int row, char *input,double *ret)
 	fclose(fp);
 }
 
-int get_row_from_linear_index(int index, int ncols){
-	int row=0;
-	while(index>=ncols){
-		index-=ncols;
-		row++;
-	}
-	return row;
-}
+// int get_row_from_linear_index(int index, int ncols){
+// 	int row=0;
+// 	while(index>=ncols){
+// 		index-=ncols;
+// 		row++;
+// 	}
+// 	return row;
+// }
 
-int get_col_from_linear_index(int index, int ncols){
-	return index%ncols;
-}
+// int get_col_from_linear_index(int index, int ncols){
+// 	return index%ncols;
+// }
 
-int get_linear_index_from_mIndex(int row, int col, int nrows, int ncols){
-	int index=0;
-	index+=col;
-	index+=row*ncols;
-	return index;
-} 
+// int get_linear_index_from_mIndex(int row, int col, int nrows, int ncols){
+// 	int index=0;
+// 	index+=col;
+// 	index+=row*ncols;
+// 	return index;
+// } 
