@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
 		// 		dest++;
 		// }
 		for(dest=1;dest<numprocs;dest++)
-			MPI_Send(0,1,MPI_INT,dest,0,MPI_COMM_WORLD);
+			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();		
 	}
 	//slave
