@@ -29,6 +29,7 @@ int main(int argc, char *argv[]){
 	double *curr_rowB;
 	//master
 	if(myid==0){
+		printf("MASTER ID = %d\n",myid);
 		starttime = MPI_Wtime();
 		char *m1="mat1.txt";
 		char *m2="mat2.txt";
@@ -62,30 +63,34 @@ int main(int argc, char *argv[]){
 		}
 ////////////////////////////////////////////////////////////////////////////
 		dest=1;
+		printf("NUMPROCS=%d\n",numprocs);
 		for(i=0;i<nrowsA;i++){
 			printf("sending row %d to process %d\n",i,dest);
-			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i,MPI_COMM_WORLD);
+			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i+1,MPI_COMM_WORLD);
 			if(dest==numprocs)
-				dest==1;
+				dest=1;
 			else
 				dest++;
 		}
+
+
 		printf("all rows sent\n");
 		//all rows sent, terminate slaves with sentinal as tag=0
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
-		endtime = MPI_Wtime();		
+		endtime = MPI_Wtime();
 	}
 	//slave
 	else{
 		source=0;
+		int row_num;
 		MPI_Recv(&nrowsA,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsA,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&nrowsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		MPI_Recv(&ncolsB,1,MPI_INT,source,1,MPI_COMM_WORLD, &status);
 		printf("\nP%d: A=%dx%d\tB=%dx%d\n",myid, nrowsA,ncolsA,nrowsB,ncolsB);
 		curr_rowA=(double*)malloc(sizeof(double)*ncolsA);
-		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		ret_row=(double*)malloc(sizeof(double)*ncolsB);
 //		printf("ret_row malooc\n");
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
 //		printf("slave done single malloc\n");
@@ -97,22 +102,36 @@ int main(int argc, char *argv[]){
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 //////////////////////////////////////////////////////
-		while(1){
-			MPI_Recv(&curr_rowA,ncolsA,MPI_DOUBLE,source,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
-			if(status.MPI_TAG==0)
-				break;
-			
-			for(i=0;i<ncolsA;i++)
-				printf("P%d: [%d][%d]=%f\n",myid, status.MPI_TAG,i,curr_1rowA[i]);
+		if(myid<=nrowsA){
+			while(1){
+				MPI_Recv(&curr_rowA[0],ncolsA,MPI_DOUBLE,source,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+				row_num=(int)status.MPI_TAG-1;
+				printf("P%d recv row %d\n",myid,row_num);
+				if(status.MPI_TAG==0)
+					break;
 
-				
-		}
+				for(i=0;i<ncolsA;i++)
+					printf("P%d: [%d][%d]=%f\n",myid, row_num,i,curr_rowA[i]);
+
+				for(i=0;i<ncolsA;i++){
+					printf("P%d: computing [%d][%d]\n",myid, row_num,i);
+					ret_row[i]=0.0;
+					for(j=0;j<nrowsB;j++){
+						printf("P%d: summing for [%d][%d]\n",myid,row_num,j);
+						ret_row[i]+=curr_rowA[j]*matB[j][i];
+					}
+				}
+				printf("P%d: summations complete\n",myid);
+				for(i=0;i<ncolsB;i++)
+					printf("P%d row %d: ans[%d]=%f\n",myid,row_num,i,ret_row[i]);
+
+			}
 //		for(i=0;i<nrowsB;i++)
 //			for(j=0;j<ncolsB;j++)
 //				printf("P%d: [%d][%d]=\n",myid,i,j);
 //				printf("P%d: [%d][%d]=%f\n",myid,i,j,matB[i][j]);
 
-
+		}
 		printf("slave end\n");
 	}
 
