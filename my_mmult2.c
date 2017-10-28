@@ -61,14 +61,14 @@ int main(int argc, char *argv[]){
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 ////////////////////////////////////////////////////////////////////////////
-		dest=1;
-		for(i=0;i<nrowsA;i++){
-			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i,MPI_COMM_WORLD);
-			if(dest==numprocs)
-				dest==1;
-			else
-				dest++;
-		}
+		// dest=1;
+		// for(i=0;i<nrowsA;i++){
+		// 	MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i,MPI_COMM_WORLD);
+		// 	if(dest==numprocs)
+		// 		dest==1;
+		// 	else
+		// 		dest++;
+		// }
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(0,1,MPI_INT,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();		
@@ -99,8 +99,8 @@ int main(int argc, char *argv[]){
 			if(status.MPI_TAG==0)
 				break;
 			
-			for(i=0;i<ncolsA;i++)
-				printf("P%d: [%d]=%f\n",myid, i,curr_rowA[i]);
+			// for(i=0;i<ncolsA;i++)
+			// 	printf("P%d: [%d]=%f\n",myid, i,curr_rowA[i]);
 
 				
 		}
