@@ -63,12 +63,15 @@ int main(int argc, char *argv[]){
 ////////////////////////////////////////////////////////////////////////////
 		dest=1;
 		for(i=0;i<nrowsA;i++){
+			printf("sending row %d to process %d\n",i,dest);
 			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i,MPI_COMM_WORLD);
 			if(dest==numprocs)
 				dest==1;
 			else
 				dest++;
 		}
+		printf("all rows sent\n");
+		//all rows sent, terminate slaves with sentinal as tag=0
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();		
@@ -100,7 +103,7 @@ int main(int argc, char *argv[]){
 				break;
 			
 			for(i=0;i<ncolsA;i++)
-				printf("P%d: [%d][%d]=%f\n",myid, status.MPI_TAG,i,curr_rowA[i]);
+				printf("P%d: [%d][%d]=%f\n",myid, status.MPI_TAG,i,curr_1rowA[i]);
 
 				
 		}
