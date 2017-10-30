@@ -19,11 +19,8 @@ int main(int argc, char *argv[]){
 	int myid, numprocs;
 	int nrowsA, ncolsA, nrowsB, ncolsB;
 	int source,dest,i,j;
-	double **matA;
-	double **matB;
-	double *ret_row;
-	double *curr_rowA;
-	double *curr_rowB;
+	double **matA,**matB,**matC;
+	double *ret_row,*curr_rowA, *curr_rowB;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -38,15 +35,20 @@ int main(int argc, char *argv[]){
 		ncolsA=get_ncols(m1);
 		nrowsB=get_nrows(m2);
 		ncolsB=get_ncols(m2);
+		slices_needed=nrowsA;
 		ret_row=(double*)malloc(sizeof(double)*nrowsA);
 		curr_rowA=(double*)malloc(sizeof(double)*ncolsA);
 		curr_rowB=(double*)malloc(sizeof(double)*ncolsB);
 		matA=(double**)malloc(sizeof(double*)*nrowsA);
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
+		matC=(double**)malloc(sizeof(double*)*nrowsA);
+		ret_row=(double*)malloc(sizeof(double)*ncolsB);
 		for(i=0;i<nrowsA;i++)
 			matA[i]=(double*)malloc(sizeof(double)*ncolsA);
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double)*ncolsB);
+		for(i=0;i<nrowsA;i++)
+			matC[i]=(double*)malloc(sizeof(double)*ncolsB);
 		for(i=0;i<nrowsA;i++)
 			get_row(ncolsA,i+1,m1,matA[i]);
 		for(i=0;i<nrowsB;i++)
@@ -73,13 +75,22 @@ int main(int argc, char *argv[]){
 		}
 		
 		//TODO recv answer slices
-
+		while(slices_needed!=0){
+			MPI_recv(&ret_row,ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_COMM_WORLD,&status);
+			matC[status.MPI_TAG-1]=ret_row;
+		}
 
 		// printf("all rows sent\n");
 		//all rows sent, terminate slaves with sentinal as tag=0
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();
+		printf("***FINAL ANSWER***\n");
+		for(i=0;i<nrowsA;i++){
+			printf("\nP%d",myid);
+			for(j=0;j<ncolsB;j++)
+				printf("  %f", matC[i][j]);
+		}
 	}
 	//slave
 	else{
@@ -113,11 +124,12 @@ int main(int argc, char *argv[]){
 						ret_row[i]+=curr_rowA[j]*matB[j][i];
 				}
 				//report slice of answer
+				MPI_Send(&ret_row,ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
+
 				printf("P%d row %d:",myid,status.MPI_TAG-1);
 				for(i=0;i<ncolsB;i++)
 					printf("  %f",ret_row[i]);
 				printf("\n");
-				//TODO send back ret_row
 			}//end inf while
 		}//end active slave block
 		printf("slave end\n");
