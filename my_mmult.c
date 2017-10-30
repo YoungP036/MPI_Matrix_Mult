@@ -120,10 +120,10 @@ int main(int argc, char *argv[]){
 				//report slice of answer
 				MPI_Send(&ret_row[0],ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
 
-				printf("P%d row %d:",myid,status.MPI_TAG-1);
-				for(i=0;i<ncolsB;i++)
-					printf("  %f",ret_row[i]);
-				printf("\n");
+//				printf("P%d row %d:",myid,status.MPI_TAG-1);
+//				for(i=0;i<ncolsB;i++)
+//					printf("  %f",ret_row[i]);
+//				printf("\n");
 			}//end inf while
 		}//end active slave block
 	}//end slaves
