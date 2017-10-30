@@ -23,7 +23,6 @@ int main(int argc, char *argv[]){
 
 	//master
 	if(myid==0){
-		//~ printf("MASTER ID = %d\n",myid);
 		starttime = MPI_Wtime();
 		char *m1="mat1.txt";
 		char *m2="mat2.txt";
@@ -56,11 +55,10 @@ int main(int argc, char *argv[]){
 			MPI_Send(&nrowsB,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 			MPI_Send(&ncolsB,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 		}
-		for(i=0;i<nrowsB;i++){
-			//~ printf("master bcast %d\n",i);
+		
+		for(i=0;i<nrowsB;i++)
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-		}
-////////////////////////////////////////////////////////////////////////////
+		
 		dest=1;
 		for(i=0;i<nrowsA;i++){
 			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i+1,MPI_COMM_WORLD);
@@ -70,19 +68,12 @@ int main(int argc, char *argv[]){
 				dest++;
 		}
 
-		//TODO recv answer slices
 		while(slices_needed!=0){
 			MPI_Recv(&ret_row[0],ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 			for(i=0;i<ncolsB;i++)
-				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
-			for(i=0;i<ncolsB;i++)
 				matC[status.MPI_TAG-1][i]=ret_row[i];
-			//matC[status.MPI_TAG-1]=ret_row;
 			slices_needed--;
-			//~ printf("%d slices needed\n",slices_needed);
 		}
-
-		// printf("all rows sent\n");
 		//all rows sent, terminate slaves with sentinal as tag=0
 		for(dest=1;dest<numprocs;dest++)
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
@@ -93,6 +84,7 @@ int main(int argc, char *argv[]){
 			for(j=0;j<ncolsB;j++)
 				printf("  %f", matC[i][j]);
 		}
+		printf("\n");
 	}
 	//slave
 	else{
@@ -128,10 +120,10 @@ int main(int argc, char *argv[]){
 				//report slice of answer
 				MPI_Send(&ret_row[0],ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
 
-				//~ printf("P%d row %d:",myid,status.MPI_TAG-1);
-				//~ for(i=0;i<ncolsB;i++)
-					//~ printf("  %f",ret_row[i]);
-				//~ printf("\n");
+				printf("P%d row %d:",myid,status.MPI_TAG-1);
+				for(i=0;i<ncolsB;i++)
+					printf("  %f",ret_row[i]);
+				printf("\n");
 			}//end inf while
 		}//end active slave block
 	}//end slaves
