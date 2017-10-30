@@ -71,6 +71,8 @@ int main(int argc, char *argv[]){
 			else
 				dest++;
 		}
+		
+		//TODO recv answer slices
 
 
 		// printf("all rows sent\n");
@@ -115,6 +117,7 @@ int main(int argc, char *argv[]){
 				for(i=0;i<ncolsB;i++)
 					printf("  %f",ret_row[i]);
 				printf("\n");
+				//TODO send back ret_row
 			}//end inf while
 		}//end active slave block
 		printf("slave end\n");
