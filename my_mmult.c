@@ -76,7 +76,7 @@ int main(int argc, char *argv[]){
 
 		//TODO recv answer slices
 		while(slices_needed!=0){
-			MPI_Recv(&ret_row,ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+			MPI_Recv(&ret_row[0],ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 			for(i=0;i<ncolsB;i++)
 				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
 //			matC[status.MPI_TAG-1]=ret_row;
