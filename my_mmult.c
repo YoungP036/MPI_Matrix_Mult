@@ -18,7 +18,7 @@ int main(int argc, char *argv[]){
 	MPI_Status status;
 	int myid, numprocs;
 	int nrowsA, ncolsA, nrowsB, ncolsB;
-	int source,dest,i,j;
+	int source,dest,i,j,slices_needed;
 	double **matA,**matB,**matC;
 	double *ret_row,*curr_rowA, *curr_rowB;
 	MPI_Init(&argc, &argv);
@@ -73,11 +73,15 @@ int main(int argc, char *argv[]){
 			else
 				dest++;
 		}
-		
+
 		//TODO recv answer slices
 		while(slices_needed!=0){
-			MPI_recv(&ret_row,ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_COMM_WORLD,&status);
-			matC[status.MPI_TAG-1]=ret_row;
+			MPI_Recv(&ret_row,ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+			for(i=0;i<ncolsB;i++)
+				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
+//			matC[status.MPI_TAG-1]=ret_row;
+			slices_needed--;
+//			printf("%d slices needed\n",slices_needed);
 		}
 
 		// printf("all rows sent\n");
@@ -86,11 +90,11 @@ int main(int argc, char *argv[]){
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();
 		printf("***FINAL ANSWER***\n");
-		for(i=0;i<nrowsA;i++){
-			printf("\nP%d",myid);
-			for(j=0;j<ncolsB;j++)
-				printf("  %f", matC[i][j]);
-		}
+//		for(i=0;i<nrowsA;i++){
+//			printf("\nP%d",myid);
+//			for(j=0;j<ncolsB;j++)
+//				printf("  %f", matC[i][j]);
+//		}
 	}
 	//slave
 	else{
