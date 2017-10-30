@@ -6,12 +6,8 @@
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
 void get_row(int ncols, int row, char *input,double *ret);
-// void get_col(int nrows, int ncols,int col, char *file, double *ret);
 int get_ncols(char *input);
 int get_nrows(char *input);
-// int get_row_from_linear_index(int index, int ncols);
-// int get_col_from_linear_index(int index, int ncols);
-// int get_linear_index_from_mIndex(int row, int col, int ncols, int nrows);
 
 int main(int argc, char *argv[]){
 	double starttime, endtime;
@@ -27,7 +23,7 @@ int main(int argc, char *argv[]){
 
 	//master
 	if(myid==0){
-		printf("MASTER ID = %d\n",myid);
+		//~ printf("MASTER ID = %d\n",myid);
 		starttime = MPI_Wtime();
 		char *m1="mat1.txt";
 		char *m2="mat2.txt";
@@ -61,7 +57,7 @@ int main(int argc, char *argv[]){
 			MPI_Send(&ncolsB,1, MPI_INT,dest,1,MPI_COMM_WORLD);
 		}
 		for(i=0;i<nrowsB;i++){
-			printf("master bcast %d\n",i);
+			//~ printf("master bcast %d\n",i);
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		}
 ////////////////////////////////////////////////////////////////////////////
@@ -81,7 +77,7 @@ int main(int argc, char *argv[]){
 				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
 			matC[status.MPI_TAG-1]=ret_row;
 			slices_needed--;
-			printf("%d slices needed\n",slices_needed);
+			//~ printf("%d slices needed\n",slices_needed);
 		}
 
 		// printf("all rows sent\n");
@@ -130,10 +126,10 @@ int main(int argc, char *argv[]){
 				//report slice of answer
 				MPI_Send(&ret_row[0],ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
 
-				printf("P%d row %d:",myid,status.MPI_TAG-1);
-				for(i=0;i<ncolsB;i++)
-					printf("  %f",ret_row[i]);
-				printf("\n");
+				//~ printf("P%d row %d:",myid,status.MPI_TAG-1);
+				//~ for(i=0;i<ncolsB;i++)
+					//~ printf("  %f",ret_row[i]);
+				//~ printf("\n");
 			}//end inf while
 		}//end active slave block
 		printf("slave end\n");
@@ -180,46 +176,9 @@ int get_ncols(char *input)
 	fclose(fp);
 	return col_count;
 }
-// void get_col(int nrows, int ncols,int col, char *file, double *ret)
-// {
-// 	//file setup
-// 	FILE *fp = fopen(file, "r");
-// 	if (fp == NULL){
-// 		printf("file not found\n");
-// 		return -1;
-// 	}
-
-// 	double chr;
-// 	int curr_col = 1;
-
-// 	//iterate to col
-// 	while (curr_col != col)
-// 	{
-// 		// printf("loop iter : %d\n",curr_col);
-// 		fscanf(fp, "%lf", &chr);
-// 		curr_col++;
-// 	}
-
-// 	int i, j;
-// 	i = 0;
-// 	j = 0;
-// 	//capture col
-// 	while (i != nrows)
-// 	{
-// 		fscanf(fp, "%lf", &chr);
-// 		if (j % ncols == 0)
-// 		{
-// 			*ret = chr;
-// 			ret++;
-// 			i++;
-// 		}
-// 		j++;
-// 	}
-// }
 
 void get_row(int ncols, int row, char *input,double *ret)
 {
-//	printf("in get row\n");
 	//file setup
 	FILE *fp;
 	fp = fopen(input, "r");
@@ -234,38 +193,15 @@ void get_row(int ncols, int row, char *input,double *ret)
 	int i;
 	
 	//iterate to correct row
-	while (r != row){
-//		printf("in get row  search iterator\n");
+	while (r != row)
 		if ((c = fgetc(fp)) == '\n')
 			r++;
-	}
 	//capture row
 	for (i = 0; i < ncols; i++)
 	{
-//		printf("capturing row\n");
 		fscanf(fp, "%lf", &c);
 		*m = c;
 		m++;
 	}
 	fclose(fp);
 }
-
-// int get_row_from_linear_index(int index, int ncols){
-// 	int row=0;
-// 	while(index>=ncols){
-// 		index-=ncols;
-// 		row++;
-// 	}
-// 	return row;
-// }
-
-// int get_col_from_linear_index(int index, int ncols){
-// 	return index%ncols;
-// }
-
-// int get_linear_index_from_mIndex(int row, int col, int nrows, int ncols){
-// 	int index=0;
-// 	index+=col;
-// 	index+=row*ncols;
-// 	return index;
-// } 
