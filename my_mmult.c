@@ -79,9 +79,9 @@ int main(int argc, char *argv[]){
 			MPI_Recv(&ret_row[0],ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 			for(i=0;i<ncolsB;i++)
 				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
-//			matC[status.MPI_TAG-1]=ret_row;
+			matC[status.MPI_TAG-1]=ret_row;
 			slices_needed--;
-//			printf("%d slices needed\n",slices_needed);
+			printf("%d slices needed\n",slices_needed);
 		}
 
 		// printf("all rows sent\n");
@@ -90,11 +90,11 @@ int main(int argc, char *argv[]){
 			MPI_Send(&matA[0][0],ncolsA,MPI_DOUBLE,dest,0,MPI_COMM_WORLD);
 		endtime = MPI_Wtime();
 		printf("***FINAL ANSWER***\n");
-//		for(i=0;i<nrowsA;i++){
-//			printf("\nP%d",myid);
-//			for(j=0;j<ncolsB;j++)
-//				printf("  %f", matC[i][j]);
-//		}
+		for(i=0;i<nrowsA;i++){
+			printf("\nP%d",myid);
+			for(j=0;j<ncolsB;j++)
+				printf("  %f", matC[i][j]);
+		}
 	}
 	//slave
 	else{
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]){
 		matB=(double**)malloc(sizeof(double*)*nrowsB);
 		for(i=0;i<nrowsB;i++)
 			matB[i]=(double*)malloc(sizeof(double*)*ncolsB);
-		
+
 		//get matB
 		for(i=0;i<nrowsB;i++)
 			MPI_Bcast(&matB[i][0], ncolsB, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]){
 						ret_row[i]+=curr_rowA[j]*matB[j][i];
 				}
 				//report slice of answer
-				MPI_Send(&ret_row,ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
+				MPI_Send(&ret_row[0],ncolsB,MPI_DOUBLE,0,status.MPI_TAG,MPI_COMM_WORLD);
 
 				printf("P%d row %d:",myid,status.MPI_TAG-1);
 				for(i=0;i<ncolsB;i++)
