@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 		nrowsB=get_nrows(m2);
 		ncolsB=get_ncols(m2);
 		slices_needed=nrowsA;
-		ret_row=(double*)malloc(sizeof(double)*nrowsA);
+		ret_row=(double*)malloc(sizeof(double)*ncolsB);
 		curr_rowA=(double*)malloc(sizeof(double)*ncolsA);
 		curr_rowB=(double*)malloc(sizeof(double)*ncolsB);
 		matA=(double**)malloc(sizeof(double*)*nrowsA);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]){
 		dest=1;
 		for(i=0;i<nrowsA;i++){
 			MPI_Send(&matA[i][0],ncolsA,MPI_DOUBLE,dest,i+1,MPI_COMM_WORLD);
-			if(dest==numprocs)
+			if(dest==numprocs-1)
 				dest=1;
 			else
 				dest++;
@@ -75,7 +75,9 @@ int main(int argc, char *argv[]){
 			MPI_Recv(&ret_row[0],ncolsB,MPI_DOUBLE,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 			for(i=0;i<ncolsB;i++)
 				printf("master got [%d][%d]=%f\n",status.MPI_TAG, i,ret_row[i]);
-			matC[status.MPI_TAG-1]=ret_row;
+			for(i=0;i<ncolsB;i++)
+				matC[status.MPI_TAG-1][i]=ret_row[i];
+			//matC[status.MPI_TAG-1]=ret_row;
 			slices_needed--;
 			//~ printf("%d slices needed\n",slices_needed);
 		}
@@ -132,7 +134,6 @@ int main(int argc, char *argv[]){
 				//~ printf("\n");
 			}//end inf while
 		}//end active slave block
-		printf("slave end\n");
 	}//end slaves
 
 	MPI_Finalize();
